@@ -2,6 +2,15 @@ import type { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi
 import { type SafeParseReturnType, z, ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+// Inspired from https://lihautan.com/extract-parameters-type-from-string-literal-types-with-typescript/
+type CurlyPathSegments<Path extends string> = Path extends `${infer SegmentA}/${infer SegmentB}`
+  ? CurlyParamOnly<SegmentA> | CurlyPathSegments<SegmentB>
+  : CurlyParamOnly<Path>;
+type CurlyParamOnly<Segment extends string> = Segment extends `{${infer Param}}` ? Param : never;
+export type CurlyPathParams<Path extends string> = {
+  [Key in CurlyPathSegments<Path>]: string;
+};
+
 /**
  * The raw path params from the request.
  */
