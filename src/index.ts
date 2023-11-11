@@ -34,7 +34,7 @@ export const Response404: ResponseConfig = {
   },
 };
 
-export type OpenAPIContext<RequestBody, Params extends TypedPathParams> = {
+export type OpenAPIContext<Params extends TypedPathParams, RequestBody> = {
   body: RequestBody;
   parsedParams: Params;
   respond: Respond;
@@ -69,15 +69,15 @@ function validate<T>(schema: ZodType<T>, value: unknown, name: string): Validate
   };
 }
 
-export type HandleRequest<RequestBody, Params extends TypedPathParams> = (
-  context: OpenAPIContext<RequestBody, Params>,
+export type HandleRequest<Params extends TypedPathParams, RequestBody> = (
+  context: OpenAPIContext<Params, RequestBody>,
 ) => Promise<Response>;
 
 export async function makeResponse<Params extends TypedPathParams, RequestBody>(
   routeConfig: RouteConfig,
   params: PathParams,
   request: Request,
-  handleRequest: HandleRequest<RequestBody, Params>,
+  handleRequest: HandleRequest<Params, RequestBody>,
 ): Promise<Response> {
   const respond: Respond = (body, status) => response(routeConfig, body, status);
 
@@ -91,7 +91,7 @@ export async function makeResponse<Params extends TypedPathParams, RequestBody>(
     return respond(bodyResult.errorMessage, 422);
   }
 
-  const openApiContext: OpenAPIContext<RequestBody, Params> = {
+  const openApiContext: OpenAPIContext<Params, RequestBody> = {
     parsedParams: paramsResult.data,
     body: bodyResult.data,
     respond,
