@@ -1,11 +1,11 @@
 {
   "name": "@oselvar/zod-openapi-handler",
-  "version": "0.0.7",
+  "version": "0.0.1",
   "description": "Supabase Realtime on Absinthe",
   "author": {
-    "name": "Open Art Market",
-    "email": "hi@openartmarket.com",
-    "url": "https://openartmarket.com"
+    "name": "Oselvar Ltd",
+    "email": "aslak@oselvar.com",
+    "url": "https://github.com/oselvar/zod-openapi-handler"
   },
   "files": [
     "./dist"
@@ -55,8 +55,7 @@
   },
   "prettier": {
     "semi": true,
-    "plugins": [
-    ],
+    "plugins": [],
     "printWidth": 100,
     "singleQuote": true,
     "trailingComma": "all",
@@ -101,6 +100,9 @@
   },
   "peerDependencies": {
     "@asteasolutions/zod-to-openapi": "^6.2.0",
+    "@types/aws-lambda": "^8.10.126",
+    "astro": "^3.5.2",
+    "aws-lambda": "^1.0.7",
     "zod": "^3.22.4",
     "zod-to-json-schema": "^3.21.4"
   }

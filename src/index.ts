@@ -2,15 +2,6 @@ import type { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi
 import { type SafeParseReturnType, z, ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-// Inspired from https://lihautan.com/extract-parameters-type-from-string-literal-types-with-typescript/
-type CurlyPathSegments<Path extends string> = Path extends `${infer SegmentA}/${infer SegmentB}`
-  ? CurlyParamOnly<SegmentA> | CurlyPathSegments<SegmentB>
-  : CurlyParamOnly<Path>;
-type CurlyParamOnly<Segment extends string> = Segment extends `{${infer Param}}` ? Param : never;
-export type CurlyPathParams<Path extends string> = {
-  [Key in CurlyPathSegments<Path>]: string;
-};
-
 /**
  * The raw path params from the request.
  */
@@ -43,9 +34,9 @@ export const Response404: ResponseConfig = {
   },
 };
 
-export type OpenAPIContext<Params extends TypedPathParams, RequestBody> = {
+export type OpenAPI<Params extends TypedPathParams, RequestBody> = {
   body: RequestBody;
-  parsedParams: Params;
+  params: Params;
   respond: Respond;
 };
 
@@ -79,7 +70,7 @@ function validate<T>(schema: ZodType<T>, value: unknown, name: string): Validate
 }
 
 export type HandleRequest<Params extends TypedPathParams, RequestBody> = (
-  context: OpenAPIContext<Params, RequestBody>,
+  context: OpenAPI<Params, RequestBody>,
 ) => Promise<Response>;
 
 export async function makeResponse<Params extends TypedPathParams, RequestBody>(
@@ -100,8 +91,8 @@ export async function makeResponse<Params extends TypedPathParams, RequestBody>(
     return respond(bodyResult.errorMessage, 422);
   }
 
-  const openApiContext: OpenAPIContext<Params, RequestBody> = {
-    parsedParams: paramsResult.data,
+  const openApiContext: OpenAPI<Params, RequestBody> = {
+    params: paramsResult.data,
     body: bodyResult.data,
     respond,
   };
