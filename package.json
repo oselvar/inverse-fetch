@@ -1,0 +1,107 @@
+{
+  "name": "@oselvar/zod-openapi-handler",
+  "version": "0.0.7",
+  "description": "Supabase Realtime on Absinthe",
+  "author": {
+    "name": "Open Art Market",
+    "email": "hi@openartmarket.com",
+    "url": "https://openartmarket.com"
+  },
+  "files": [
+    "./dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "keywords": [
+    "openapi",
+    "zod",
+    "json-schema",
+    "astro"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "compile": "tsup --external @supabase/supabase-js --dts --format cjs,esm --clean src/index.ts",
+    "upgrade": "npm-check-updates --upgrade",
+    "prepare": "husky install",
+    "lint-staged": "lint-staged",
+    "format": "prettier './**/*.ts' --write",
+    "lint": "eslint './**/*.ts' --fix"
+  },
+  "repository": "oselvar/zod-openapi-handler",
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "6.7.3",
+    "@typescript-eslint/parser": "6.7.3",
+    "@vitest/coverage-v8": "0.34.6",
+    "@vitest/ui": "0.34.6",
+    "eslint": "8.50.0",
+    "eslint-config-prettier": "9.0.0",
+    "husky": "8.0.3",
+    "lint-staged": "14.0.1",
+    "npm-check-updates": "16.14.4",
+    "prettier": "2.8.8",
+    "tsup": "7.2.0",
+    "typescript": "5.2.2",
+    "vite": "4.4.9",
+    "vitest": "0.34.6"
+  },
+  "prettier": {
+    "semi": true,
+    "plugins": [
+    ],
+    "printWidth": 100,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "arrowParens": "always"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --quiet --fix"
+    ],
+    "*.{json,ts}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module"
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error"
+    },
+    "plugins": [
+      "simple-import-sort"
+    ],
+    "env": {
+      "node": true
+    },
+    "ignorePatterns": [
+      "src/env.d.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@asteasolutions/zod-to-openapi": "^6.2.0",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.21.4"
+  }
+}
