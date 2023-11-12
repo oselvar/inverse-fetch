@@ -37,9 +37,17 @@ export const thingRouteConfig: RouteConfig = {
   },
 };
 
-export const thing: z.infer<typeof Thing> = {
+export const goodThing: z.infer<typeof Thing> = {
   name: 'My thing',
   description: 'The best thing ever',
+};
+
+export const goodParams: z.infer<typeof ThingParams> = {
+  thingId: '1',
+};
+
+export const badParams: z.infer<typeof ThingParams> = {
+  thingId: 'xyz',
 };
 
 export function request() {
@@ -48,6 +56,6 @@ export function request() {
     headers: {
       'content-type': 'application/json',
     },
-    body: JSON.stringify(thing),
+    body: JSON.stringify(goodThing),
   });
 }
