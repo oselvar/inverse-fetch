@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { Thing, ThingParams, thingRouteConfig } from '../index.test';
 import { z } from 'zod';
 import { openAPIHandler } from './index.js';
 import {
@@ -10,6 +9,7 @@ import {
   Callback,
   Context,
 } from 'aws-lambda';
+import { Thing, ThingParams, thingRouteConfig } from '../test_helpers.js';
 
 const context: Partial<Context> = {};
 const callback: Callback<APIGatewayProxyResultV2> = () => {

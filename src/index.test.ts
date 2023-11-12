@@ -1,42 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { Response404, makeResponse } from './index.js';
-import { RouteConfig } from '@asteasolutions/zod-to-openapi';
+import { makeResponse } from './index.js';
 import { z } from 'zod';
-
-export const ThingParams = z.object({
-  thingId: z.string().regex(/[\d]+/),
-});
-
-export const Thing = z.object({
-  name: z.string(),
-  description: z.string(),
-});
-
-export const thingRouteConfig: RouteConfig = {
-  method: 'post',
-  path: '/things/{thingId}',
-  request: {
-    params: ThingParams,
-    body: {
-      content: {
-        'application/json': {
-          schema: Thing,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Create a thing',
-      content: {
-        'application/json': {
-          schema: Thing,
-        },
-      },
-    },
-    404: Response404,
-  },
-};
+import { thing, ThingParams, request, thingRouteConfig } from './test_helpers.js';
 
 describe('makeResponse', () => {
   it('validates request and response', async () => {
@@ -44,23 +9,10 @@ describe('makeResponse', () => {
       thingId: '1',
     };
 
-    const thing: z.infer<typeof Thing> = {
-      name: 'My thing',
-      description: 'The best thing ever',
-    };
-
-    const request = new Request('http://localhost:3000/things/1', {
-      method: 'post',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(thing),
-    });
-
     const response = await makeResponse(
       thingRouteConfig,
       params,
-      request,
+      request(),
       async ({ body, respond }) => {
         return respond(body, 200);
       },
@@ -74,17 +26,10 @@ describe('makeResponse', () => {
       thingId: 'xyz',
     };
 
-    const request = new Request('http://localhost:3000/things/1', {
-      method: 'post',
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
-
     const response = await makeResponse(
       thingRouteConfig,
       params,
-      request,
+      request(),
       async ({ body, respond }) => {
         return respond(body, 200);
       },
