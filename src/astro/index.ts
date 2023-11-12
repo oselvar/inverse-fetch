@@ -20,16 +20,16 @@ export function openAPIRoute<Params extends TypedPathParams, RequestBody>(
   routeConfig: RouteConfig,
   route: OpenAPIRoute<Params, RequestBody>,
 ): APIRoute {
-  const result: APIRoute = async (context) => {
+  const apiRoute: APIRoute = async (context) => {
     const params = context.params;
     const request = context.request;
 
-    return makeResponse<Params, RequestBody>(routeConfig, params, request, (openApiContext) =>
+    return makeResponse<Params, RequestBody>(routeConfig, params, request, (openapi) =>
       route({
         ...context,
-        openapi: openApiContext,
+        openapi,
       }),
     );
   };
-  return result;
+  return apiRoute;
 }

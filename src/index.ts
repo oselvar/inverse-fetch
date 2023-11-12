@@ -81,19 +81,19 @@ export async function makeResponse<Params extends TypedPathParams, RequestBody>(
 ): Promise<Response> {
   const respond: Respond = (body, status) => response(routeConfig, body, status);
 
-  const paramsResult = parseRequestParams<Params>(routeConfig, params);
-  if (!paramsResult.success) {
-    return respond(paramsResult.errorMessage, 404);
+  const requestParamsResult = parseRequestParams<Params>(routeConfig, params);
+  if (!requestParamsResult.success) {
+    return respond(requestParamsResult.errorMessage, 404);
   }
 
-  const bodyResult = await parseRequestBody<RequestBody>(routeConfig, request);
-  if (!bodyResult.success) {
-    return respond(bodyResult.errorMessage, 422);
+  const requestBodyResult = await parseRequestBody<RequestBody>(routeConfig, request);
+  if (!requestBodyResult.success) {
+    return respond(requestBodyResult.errorMessage, 422);
   }
 
   const openApiContext: OpenAPI<Params, RequestBody> = {
-    params: paramsResult.data,
-    body: bodyResult.data,
+    params: requestParamsResult.data,
+    body: requestBodyResult.data,
     respond,
   };
 

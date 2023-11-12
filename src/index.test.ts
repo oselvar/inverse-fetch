@@ -3,20 +3,20 @@ import { Response404, makeResponse } from './index.js';
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-const Params = z.object({
+export const ThingParams = z.object({
   thingId: z.string().regex(/[\d]+/),
 });
 
-const Thing = z.object({
+export const Thing = z.object({
   name: z.string(),
   description: z.string(),
 });
 
-const routeConfig: RouteConfig = {
+export const thingRouteConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
-    params: Params,
+    params: ThingParams,
     body: {
       content: {
         'application/json': {
@@ -40,7 +40,7 @@ const routeConfig: RouteConfig = {
 
 describe('makeResponse', () => {
   it('validates request and response', async () => {
-    const params: z.infer<typeof Params> = {
+    const params: z.infer<typeof ThingParams> = {
       thingId: '1',
     };
 
@@ -57,15 +57,20 @@ describe('makeResponse', () => {
       body: JSON.stringify(thing),
     });
 
-    const response = await makeResponse(routeConfig, params, request, async ({ body, respond }) => {
-      return respond(body, 200);
-    });
+    const response = await makeResponse(
+      thingRouteConfig,
+      params,
+      request,
+      async ({ body, respond }) => {
+        return respond(body, 200);
+      },
+    );
     const responseBody = await response.json();
     expect(responseBody).toEqual(thing);
   });
 
   it('returns 404 for malformed path params', async () => {
-    const params: z.infer<typeof Params> = {
+    const params: z.infer<typeof ThingParams> = {
       thingId: 'xyz',
     };
 
@@ -76,9 +81,14 @@ describe('makeResponse', () => {
       },
     });
 
-    const response = await makeResponse(routeConfig, params, request, async ({ body, respond }) => {
-      return respond(body, 200);
-    });
+    const response = await makeResponse(
+      thingRouteConfig,
+      params,
+      request,
+      async ({ body, respond }) => {
+        return respond(body, 200);
+      },
+    );
     expect(response.status).toEqual(404);
   });
 });
