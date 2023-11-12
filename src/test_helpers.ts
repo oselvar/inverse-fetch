@@ -2,11 +2,11 @@ import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 import { Response404 } from '.';
 
-export const ThingParams = z.object({
+const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
 });
 
-export const Thing = z.object({
+const ThingSchema = z.object({
   name: z.string(),
   description: z.string(),
 });
@@ -15,11 +15,11 @@ export const thingRouteConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
-    params: ThingParams,
+    params: ThingParamsSchema,
     body: {
       content: {
         'application/json': {
-          schema: Thing,
+          schema: ThingSchema,
         },
       },
     },
@@ -29,7 +29,7 @@ export const thingRouteConfig: RouteConfig = {
       description: 'Create a thing',
       content: {
         'application/json': {
-          schema: Thing,
+          schema: ThingSchema,
         },
       },
     },
@@ -37,21 +37,25 @@ export const thingRouteConfig: RouteConfig = {
   },
 };
 
-export const goodThing: z.infer<typeof Thing> = {
+type Thing = z.infer<typeof ThingSchema>;
+
+export const goodThing: Thing = {
   name: 'My thing',
   description: 'The best thing ever',
 };
 
-export const goodParams: z.infer<typeof ThingParams> = {
+type ThingParams = z.infer<typeof ThingParamsSchema>;
+
+export const goodParams: ThingParams = {
   thingId: '1',
 };
 
-export const badParams: z.infer<typeof ThingParams> = {
+export const badParams: ThingParams = {
   thingId: 'xyz',
 };
 
-export function request() {
-  return new Request('http://localhost:3000/things/1', {
+export function thingRequest({ thingId }: ThingParams) {
+  return new Request(`http://localhost:3000/things/${encodeURIComponent(thingId)}`, {
     method: 'post',
     headers: {
       'content-type': 'application/json',

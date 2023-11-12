@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { openAPIRoute } from './index.js';
 import { APIContext } from 'astro';
-import { goodParams, request, goodThing, thingRouteConfig } from '../test_helpers';
+import { goodParams, thingRequest, goodThing, thingRouteConfig } from '../test_helpers';
 
 describe('openAPIHandler', () => {
   it('validates request and response', async () => {
@@ -11,7 +11,7 @@ describe('openAPIHandler', () => {
     });
 
     const context: Partial<APIContext> = {
-      request: request(),
+      request: thingRequest(goodParams),
       params: goodParams,
     };
 

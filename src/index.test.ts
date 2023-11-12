@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { makeResponse } from './index.js';
-import { z } from 'zod';
 import {
   goodThing,
-  ThingParams,
-  request,
+  thingRequest,
   thingRouteConfig,
   goodParams,
   badParams,
@@ -15,7 +13,7 @@ describe('makeResponse', () => {
     const response = await makeResponse(
       thingRouteConfig,
       goodParams,
-      request(),
+      thingRequest(goodParams),
       async ({ body, respond }) => {
         return respond(body, 200);
       },
@@ -28,7 +26,7 @@ describe('makeResponse', () => {
     const response = await makeResponse(
       thingRouteConfig,
       badParams,
-      request(),
+      thingRequest(badParams),
       async ({ body, respond }) => {
         return respond(body, 200);
       },

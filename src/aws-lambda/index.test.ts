@@ -8,7 +8,7 @@ import {
   Callback,
   Context,
 } from 'aws-lambda';
-import { goodParams, request, goodThing, thingRouteConfig } from '../test_helpers.js';
+import { goodParams, thingRequest, goodThing, thingRouteConfig } from '../test_helpers.js';
 
 const context: Partial<Context> = {};
 const callback: Callback<APIGatewayProxyResultV2> = () => {
@@ -22,7 +22,7 @@ describe('openAPIHandler', () => {
       return respond(body, 200);
     });
 
-    const event = await toEvent(request(), goodParams);
+    const event = await toEvent(thingRequest(goodParams), goodParams);
 
     const result = (await handler(
       event as APIGatewayProxyEventV2,
