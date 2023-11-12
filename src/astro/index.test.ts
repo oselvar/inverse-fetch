@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { openAPIRoute } from './index.js';
 import { APIContext } from 'astro';
-import { goodParams, thingRequest, goodThing, thingRouteConfig } from '../test_helpers';
+import { describe, expect, it } from 'vitest';
+
+import { goodParams, goodThing, thingRequest, thingRouteConfig } from '../test_helpers';
+import { openAPIRoute } from './index.js';
 
 describe('openAPIHandler', () => {
   it('validates request and response', async () => {

@@ -1,5 +1,3 @@
-import { describe, it, expect } from 'vitest';
-import { openAPIHandler } from './index.js';
 import {
   APIGatewayEventRequestContextV2,
   APIGatewayProxyEventV2,
@@ -8,7 +6,10 @@ import {
   Callback,
   Context,
 } from 'aws-lambda';
-import { goodParams, thingRequest, goodThing, thingRouteConfig } from '../test_helpers.js';
+import { describe, expect, it } from 'vitest';
+
+import { goodParams, goodThing, thingRequest, thingRouteConfig } from '../test_helpers.js';
+import { openAPIHandler } from './index.js';
 
 const context: Partial<Context> = {};
 const callback: Callback<APIGatewayProxyResultV2> = () => {
