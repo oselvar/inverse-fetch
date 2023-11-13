@@ -51,7 +51,11 @@ import { FetchRoute } from 'fetch-openapi-handler';
 export const fetchRoute: FetchRoute = async ({ params, request }) => {
   // If the params are not valid, a 404 Response will be thrown
   // If the request body is not valid, a 422 Response will be thrown
-  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(routeConfig, params, request);
+  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(
+    routeConfig, 
+    params, 
+    request
+  );
 
   // Do something with params and body
 
@@ -71,7 +75,11 @@ The following example uses [Astro API Routes](https://docs.astro.build/en/core-c
 import type { APIRoute } from 'astro';
 
 export const POST: APIRoute = async (context) => {
-  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(routeConfig, context.params, context.request);
+  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(
+    routeConfig, 
+    context.params, 
+    context.request
+  );
 
   const responseBody = { message: 'Hello, world!' };
   return respond(responseBody, 200);
