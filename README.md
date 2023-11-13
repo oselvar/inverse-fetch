@@ -67,7 +67,7 @@ export const fetchRoute: FetchRoute = async ({ params, request }) => {
 
 The `FetchRoute` handler can then be registered with your HTTP server (see below).
 
-If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can use the `makeOpenAPI` function to convert the request and response to the format expected by `fetch-openapi-handler`.
+If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can write your handler using the framework's API and still use the `makeOpenAPI` function.
 
 The following example uses [Astro API Routes](https://docs.astro.build/en/core-concepts/endpoints/#server-endpoints-api-routes):
 
@@ -88,6 +88,8 @@ export const POST: APIRoute = async (context) => {
 
 ### Register the handler function
 
+*This section is for web servers that do not use the Fetch API.*
+
 Convert the handler function to a function that can be registered with your HTTP server.
 
 Note that the support for multiple HTTP servers can also simplify your developer experience.
@@ -104,11 +106,10 @@ import { toProxyHandler } from 'fetch-openapi-handler/aws-lambda';
 export const handler = toProxyHandler(fetchRoute);
 ```
 
-#### Astro
+#### Express
 
-```typescript
-import { FetchOpenAPIHandler } from 'fetch-openapi-handler';
-import { toProxyHandler } from 'fetch-openapi-handler/aws-lambda';
+Coming soon.
 
-export const handler = toProxyHandler(fetchRoute);
-```
+#### Fastify
+
+Coming soon.
