@@ -1,6 +1,6 @@
 {
   "name": "@oselvar/openapi-routes",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Supabase Realtime on Absinthe",
   "author": {
     "name": "Oselvar Ltd",
