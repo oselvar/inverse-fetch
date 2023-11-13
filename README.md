@@ -24,7 +24,7 @@ npm install --save fetch-openapi-handler
 There are three main steps:
 1. Define an OpenAPI route
 2. Write a handler function
-3. Register the handler function with your HTTP server
+3. Register the handler function (if you're using a web server that does not use the Fetch API)
 
 ### Define an OpenAPI route
 
@@ -42,6 +42,9 @@ const routeConfig: RouteConfig = {
 
 ### Write a handler function
 
+If you are using a framework that does *not* use the Fetch API [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects
+such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressjs.com/) or [Fastify](https://www.fastify.io/), use the `FetchRoute` type to define your handler function:
+
 ```typescript
 import { FetchRoute } from 'fetch-openapi-handler';
 
@@ -58,12 +61,16 @@ export const fetchRoute: FetchRoute = async ({ params, request }) => {
 };
 ```
 
-If you are using a framework that already uses `Request` and `Response` such as [Astro](https://astro.build/), you can use the `makeOpenAPI` function to convert the request and response to the format expected by `fetch-openapi-handler`.
+The `FetchRoute` handler can then be registered with your HTTP server (see below).
+
+If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can use the `makeOpenAPI` function to convert the request and response to the format expected by `fetch-openapi-handler`.
+
+The following example uses [Astro API Routes](https://docs.astro.build/en/core-concepts/endpoints/#server-endpoints-api-routes):
 
 ```typescript
-import type { APIContext, APIRoute } from 'astro';
+import type { APIRoute } from 'astro';
 
-export const fetchRoute: APIRoute = async (context: APIContext) => {
+export const POST: APIRoute = async (context) => {
   const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(routeConfig, context.params, context.request);
 
   const responseBody = { message: 'Hello, world!' };
