@@ -1,7 +1,7 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import { Response404, Response422 } from '.';
+import { FetchRoute, makeOpenAPI, Response404, Response422 } from '.';
 
 const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
@@ -12,7 +12,7 @@ const ThingSchema = z.object({
   description: z.string().regex(/[a-z]+/),
 });
 
-export const thingRouteConfig: RouteConfig = {
+const thingRouteConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -61,8 +61,13 @@ export const badParams: ThingParams = {
   thingId: 'xyz',
 };
 
-export function thingRequest({ thingId }: ThingParams, thing: Thing = goodThing) {
-  return new Request(`http://localhost:3000/things/${encodeURIComponent(thingId)}`, {
+export const thingRoute: FetchRoute = async ({ params, request }) => {
+  const { body, respond } = await makeOpenAPI(thingRouteConfig, params, request);
+  return respond(body, 200);
+};
+
+export function thingRequest({ thingId }: ThingParams, thing: Thing) {
+  return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
     method: 'post',
     headers: {
       'content-type': 'application/json',

@@ -111,7 +111,7 @@ export async function makeOpenAPI<Params extends TypedPathParams, RequestBody>(
 /**
  * @deprecated
  */
-export async function makeResponse<Params extends TypedPathParams, RequestBody>(
+export async function makeResponseXXX<Params extends TypedPathParams, RequestBody>(
   routeConfig: RouteConfig,
   params: PathParams,
   request: Request,

@@ -6,53 +6,20 @@ import {
 } from 'aws-lambda';
 export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
-
-import { FetchRoute, makeResponse, type OpenAPI, type TypedPathParams } from '../index';
-
-export type OpenAPIEvent<Params extends TypedPathParams, RequestBody> = APIGatewayProxyEventV2 & {
-  openapi: OpenAPI<Params, RequestBody>;
-};
-
-type OpenAPIHandler<Params extends TypedPathParams, RequestBody> = (
-  event: OpenAPIEvent<Params, RequestBody>,
-) => Promise<Response>;
+import { FetchRoute } from '../index';
 
 export function toProxyHandler(fetchRoute: FetchRoute): ProxyHandler {
   return async (event) => {
     const params = event.pathParameters || {};
     const request = toRequest(event);
-    const response = await fetchRoute({ params, request });
-    return toResult(response);
+    try {
+      const response = await fetchRoute({ params, request });
+      return toResult(response);
+    } catch (error) {
+      if (error instanceof Response) return toResult(error);
+      throw error;
+    }
   };
-}
-
-/**
- * @deprecated Use `toProxyHandler` instead
- */
-export function openAPIHandler<Params extends TypedPathParams, RequestBody>(
-  routeConfig: RouteConfig,
-  handler: OpenAPIHandler<Params, RequestBody>,
-): ProxyHandler {
-  const proxyHandler: ProxyHandler = async (event) => {
-    const request = toRequest(event);
-    const params = event.pathParameters || {};
-
-    const response = await makeResponse<Params, RequestBody>(
-      routeConfig,
-      params,
-      request,
-      (openapi) =>
-        handler({
-          ...event,
-          openapi,
-        }),
-    );
-
-    const result: APIGatewayProxyStructuredResultV2 = await toResult(response);
-    return result;
-  };
-  return proxyHandler;
 }
 
 /**

@@ -8,29 +8,53 @@ import {
 } from 'aws-lambda';
 import { describe, expect, it } from 'vitest';
 
-import { goodParams, goodThing, thingRequest, thingRouteConfig } from '../test_helpers.js';
-import { openAPIHandler } from './index.js';
+import {
+  badParams,
+  badThing,
+  goodParams,
+  goodThing,
+  thingRequest,
+  thingRoute,
+} from '../test_helpers.js';
+import { toProxyHandler } from './index.js';
 
-const context: Partial<Context> = {};
+const context = {} as Context;
 const callback: Callback<APIGatewayProxyResultV2> = () => {
   throw new Error('not implemented');
 };
 
-describe('openAPIHandler', () => {
+describe('proxyHandler', () => {
   it('validates request and response', async () => {
-    const handler = openAPIHandler(thingRouteConfig, async ({ openapi }) => {
-      const { body, respond } = openapi;
-      return respond(body, 200);
-    });
-
-    const event = await toEvent(thingRequest(goodParams), goodParams);
-
-    const result = (await handler(
-      event as APIGatewayProxyEventV2,
-      context as Context,
+    const proxyHandler = toProxyHandler(thingRoute);
+    const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
+    const result = (await proxyHandler(
+      event,
+      context,
       callback,
     )) as APIGatewayProxyStructuredResultV2;
     expect(JSON.parse(result.body as string)).toEqual(goodThing);
+  });
+
+  it('responds with 404 for malformed path params', async () => {
+    const proxyHandler = toProxyHandler(thingRoute);
+    const event = await toEvent(thingRequest(badParams, goodThing), badParams);
+    const result = (await proxyHandler(
+      event,
+      context,
+      callback,
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(result.statusCode).toEqual(404);
+  });
+
+  it('responds with 422 for malformed request body', async () => {
+    const proxyHandler = toProxyHandler(thingRoute);
+    const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
+    const result = (await proxyHandler(
+      event,
+      context,
+      callback,
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(result.statusCode).toEqual(422);
   });
 });
 

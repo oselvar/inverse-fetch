@@ -2,26 +2,20 @@ import assert from 'node:assert';
 
 import { describe, expect, it } from 'vitest';
 
-import { FetchRoute, makeOpenAPI } from '.';
 import {
   badParams,
   badThing,
   goodParams,
   goodThing,
   thingRequest,
-  thingRouteConfig,
+  thingRoute,
 } from './test_helpers';
-
-const thingRoute: FetchRoute = async ({ params, request }) => {
-  const { body, respond } = await makeOpenAPI(thingRouteConfig, params, request);
-  return respond(body, 200);
-};
 
 describe('FetchRoute', () => {
   it('validates request and response', async () => {
     const response = await thingRoute({
       params: goodParams,
-      request: thingRequest(goodParams),
+      request: thingRequest(goodParams, goodThing),
     });
     const responseBody = await response.json();
     expect(responseBody).toEqual(goodThing);
@@ -31,7 +25,7 @@ describe('FetchRoute', () => {
     await assert.rejects(
       thingRoute({
         params: badParams,
-        request: thingRequest(badParams),
+        request: thingRequest(badParams, goodThing),
       }),
       (response: Response) => {
         assert.strictEqual(response.status, 404);
