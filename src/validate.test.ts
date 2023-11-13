@@ -30,6 +30,20 @@ describe('FetchRoute', () => {
     assert.strictEqual(response.status, 404);
   });
 
+  it('responds with 415 for unsupported media type', async () => {
+    const response = await thingRoute({
+      params: goodParams,
+      request: new Request(`http://host.com/things/${encodeURIComponent(goodParams.thingId)}`, {
+        method: 'post',
+        headers: {
+          'content-type': 'text/csv',
+        },
+        body: `foo,bar,baz\n1,2,3`,
+      }),
+    });
+    assert.strictEqual(response.status, 415);
+  });
+
   it('responds with 422 for malformed request body', async () => {
     const response = await thingRoute({
       params: goodParams,

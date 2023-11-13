@@ -34,6 +34,15 @@ export const Response404: ResponseConfig = {
   },
 };
 
+export const Response415: ResponseConfig = {
+  description: 'Unsupported Media Type',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
+
 export const Response422: ResponseConfig = {
   description: 'Unprocessable Entity',
   content: {
@@ -118,46 +127,52 @@ export async function validate<
 ): Promise<ValidationResult<Params, RequestBody>> {
   const respond: Respond = (body, status) => response(routeConfig, body, status);
 
-  const requestParamsResult = parseRequestParams<Params>(routeConfig, params);
-  if (requestParamsResult.response) {
+  try {
+    const requestParamsResult = parseRequestParams<Params>(routeConfig, params);
+    if (requestParamsResult.response) {
+      return {
+        params: null,
+        body: null,
+        respond,
+        response: requestParamsResult.response,
+      };
+    }
+
+    const requestBodyResult = await parseRequestBody<RequestBody>(routeConfig, request);
+    if (requestBodyResult.response) {
+      return {
+        params: requestParamsResult.data,
+        body: null,
+        respond,
+        response: requestBodyResult.response,
+      };
+    }
+
+    return {
+      params: requestParamsResult.data,
+      body: requestBodyResult.data,
+      respond,
+      response: null,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.stack || error.message : JSON.stringify(error);
     return {
       params: null,
       body: null,
       respond,
-      response: requestParamsResult.response,
+      response: textResponse(message, 500),
     };
   }
-
-  const requestBodyResult = await parseRequestBody<RequestBody>(routeConfig, request);
-  if (requestBodyResult.response) {
-    return {
-      params: requestParamsResult.data,
-      body: null,
-      respond,
-      response: requestBodyResult.response,
-    };
-  }
-
-  return {
-    params: requestParamsResult.data,
-    body: requestBodyResult.data,
-    respond,
-    response: null,
-  };
 }
 
 function parseRequestParams<T>(routeConfig: RouteConfig, params: Json): ValidateResult<T> {
   const schema = routeConfig.request?.params;
-  if (schema === undefined)
+  if (schema === undefined) {
     return {
       data: null,
       response: textResponse('No request params schema', 500),
     };
-  if (!(schema instanceof ZodType))
-    return {
-      data: null,
-      response: textResponse('Request params schema is not a zod schema', 500),
-    };
+  }
   return validateObject<T>(schema as unknown as ZodType<T>, params, 'request params', 404);
 }
 
@@ -166,7 +181,10 @@ async function parseRequestBody<T>(
   request: Request,
 ): Promise<ValidateResult<T>> {
   const contentType = request.headers.get('content-type');
-  if (contentType) {
+  if (!contentType) {
+    return { data: null as T, response: null };
+  }
+  if (contentType === 'application/json') {
     const contentObject = routeConfig.request?.body?.content;
     if (!contentObject)
       return {
@@ -174,12 +192,6 @@ async function parseRequestBody<T>(
         response: textResponse('No content object', 500),
       };
     const schema = contentObject[contentType].schema;
-    if (!(schema instanceof ZodType)) {
-      return {
-        data: null,
-        response: textResponse('Request body schema is not a zod schema', 500),
-      };
-    }
     const body = await request.json();
     return validateObject<T>(
       schema as ZodType<T>,
@@ -188,7 +200,10 @@ async function parseRequestBody<T>(
       422,
     );
   }
-  return { data: null as T, response: null };
+  return {
+    data: null,
+    response: textResponse(`Unsupported content type: ${contentType}`, 415),
+  };
 }
 
 function response(routeConfig: RouteConfig, body: unknown, status: number): Response {
@@ -207,8 +222,6 @@ function response(routeConfig: RouteConfig, body: unknown, status: number): Resp
   } else if (typeof body === 'object') {
     const contentType = 'application/json';
     const schema = responseConfig.content[contentType].schema;
-    if (!(schema instanceof ZodType))
-      return textResponse(`Response body schema is not a zod schema`, 500);
     const result = validateObject(schema as ZodType<unknown>, body, 'response body', 500);
 
     if (result.response) {
