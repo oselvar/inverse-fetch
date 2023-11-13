@@ -1,18 +1,18 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import { FetchRoute, makeOpenAPI, Response404, Response422 } from '.';
+import { FetchRoute, makeOpenAPI, Response404, Response422, Response500 } from '.';
 
 const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
 });
 
-const ThingSchema = z.object({
+const ThingBodySchema = z.object({
   name: z.string().regex(/[a-z]+/),
   description: z.string().regex(/[a-z]+/),
 });
 
-const thingRouteConfig: RouteConfig = {
+const routeConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -20,7 +20,7 @@ const thingRouteConfig: RouteConfig = {
     body: {
       content: {
         'application/json': {
-          schema: ThingSchema,
+          schema: ThingBodySchema,
         },
       },
     },
@@ -30,23 +30,24 @@ const thingRouteConfig: RouteConfig = {
       description: 'Create a thing',
       content: {
         'application/json': {
-          schema: ThingSchema,
+          schema: ThingBodySchema,
         },
       },
     },
     404: Response404,
     422: Response422,
+    500: Response500,
   },
 };
 
-type Thing = z.infer<typeof ThingSchema>;
+type ThingBody = z.infer<typeof ThingBodySchema>;
 
-export const goodThing: Thing = {
+export const goodThing: ThingBody = {
   name: 'mything',
   description: 'bestghingever',
 };
 
-export const badThing: Thing = {
+export const badThing: ThingBody = {
   name: 'MYTHING',
   description: 'WORSTTHINGEVER',
 };
@@ -66,14 +67,14 @@ export const respondWithBadTypeParams: ThingParams = {
 };
 
 export const thingRoute: FetchRoute = async ({ params, request }) => {
-  const { body, respond } = await makeOpenAPI(thingRouteConfig, params, request);
+  const { body, respond } = await makeOpenAPI<ThingParams, ThingBody>(routeConfig, params, request);
   if (params.thingId === respondWithBadTypeParams.thingId) {
     return respond({ foo: 'bar' }, 200);
   }
   return respond(body, 200);
 };
 
-export function thingRequest({ thingId }: ThingParams, thing: Thing) {
+export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {
   return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
     method: 'post',
     headers: {

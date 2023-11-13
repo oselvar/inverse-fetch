@@ -25,8 +25,8 @@ type Json = string | number | boolean | null | { [key: string]: Json | undefined
 
 export type Respond = (body: unknown, status: number) => Response;
 
-export const Response422: ResponseConfig = {
-  description: 'The request body was invalid',
+export const Response404: ResponseConfig = {
+  description: 'Not Found',
   content: {
     'application/text': {
       schema: z.string(),
@@ -34,8 +34,17 @@ export const Response422: ResponseConfig = {
   },
 };
 
-export const Response404: ResponseConfig = {
-  description: 'Not Found',
+export const Response422: ResponseConfig = {
+  description: 'Unprocessable Entity',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
+
+export const Response500: ResponseConfig = {
+  description: 'Internal Server Error',
   content: {
     'application/text': {
       schema: z.string(),
@@ -82,7 +91,10 @@ export type HandleRequest<Params extends TypedPathParams, RequestBody> = (
   context: OpenAPI<Params, RequestBody>,
 ) => Promise<Response>;
 
-export async function makeOpenAPI<Params extends TypedPathParams, RequestBody>(
+export async function makeOpenAPI<
+  Params extends TypedPathParams = TypedPathParams,
+  RequestBody = unknown,
+>(
   routeConfig: RouteConfig,
   params: PathParams,
   request: Request,
@@ -106,19 +118,6 @@ export async function makeOpenAPI<Params extends TypedPathParams, RequestBody>(
   };
 
   return openapi;
-}
-
-/**
- * @deprecated
- */
-export async function makeResponseXXX<Params extends TypedPathParams, RequestBody>(
-  routeConfig: RouteConfig,
-  params: PathParams,
-  request: Request,
-  handleRequest: HandleRequest<Params, RequestBody>,
-): Promise<Response> {
-  const openapi = await makeOpenAPI<Params, RequestBody>(routeConfig, params, request);
-  return handleRequest(openapi);
 }
 
 function parseRequestParams<T>(routeConfig: RouteConfig, params: Json): ValidateResult<T> {
