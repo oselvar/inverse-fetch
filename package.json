@@ -18,6 +18,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
+    },
+    "./aws-lambda": {
+      "import": "./dist/aws-lambda/index.js",
+      "require": "./dist/aws-lambda/index.cjs",
+      "types": "./dist/aws-lambda/index.d.ts"
     }
   },
   "keywords": [
@@ -30,7 +35,7 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "compile": "tsc --build",
-    "build": "tsup --dts --format cjs,esm --clean src/index.ts",
+    "build": "tsup --dts --format cjs,esm --clean --entry src/index.ts --entry src/aws-lambda/index.ts",
     "upgrade": "npm-check-updates --upgrade",
     "prepare": "husky install",
     "lint-staged": "lint-staged",
@@ -108,5 +113,14 @@
     "ignorePatterns": [
       "src/env.d.ts"
     ]
+  },
+  "tsup": {
+    "entry": [
+      "src/index.ts",
+      "src/aws-lambda/index.ts"
+    ],
+    "splitting": false,
+    "sourcemap": true,
+    "clean": true
   }
 }
