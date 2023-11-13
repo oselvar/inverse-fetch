@@ -1,11 +1,11 @@
 {
-  "name": "@oselvar/zod-openapi-handler",
+  "name": "@oselvar/openapi-routes",
   "version": "0.0.1",
   "description": "Supabase Realtime on Absinthe",
   "author": {
     "name": "Oselvar Ltd",
     "email": "aslak@oselvar.com",
-    "url": "https://github.com/oselvar/zod-openapi-handler"
+    "url": "https://github.com/oselvar/openapi-routes"
   },
   "files": [
     "./dist"
@@ -16,7 +16,8 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "keywords": [
@@ -36,8 +37,15 @@
     "format": "prettier './**/*.ts' --write",
     "lint": "eslint './**/*.ts' --fix"
   },
-  "repository": "oselvar/zod-openapi-handler",
+  "repository": "oselvar/openapi-routes",
   "license": "MIT",
+  "peerDependencies": {
+    "@asteasolutions/zod-to-openapi": "^6.2.0",
+    "@types/aws-lambda": "^8.10.126",
+    "aws-lambda": "^1.0.7",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.21.4"
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "6.7.3",
     "@typescript-eslint/parser": "6.7.3",
@@ -99,12 +107,5 @@
     "ignorePatterns": [
       "src/env.d.ts"
     ]
-  },
-  "peerDependencies": {
-    "@asteasolutions/zod-to-openapi": "^6.2.0",
-    "@types/aws-lambda": "^8.10.126",
-    "aws-lambda": "^1.0.7",
-    "zod": "^3.22.4",
-    "zod-to-json-schema": "^3.21.4"
   }
 }

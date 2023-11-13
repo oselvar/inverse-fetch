@@ -1,17 +1,20 @@
-# fetch-openapi-handler
+# openapi-routes
 
-*Fetch OpenAPI Handler* is a library that simplifies validation of HTTP requests and responses against an OpenAPI 3.0 specification.
+*OpenAPI Routes* is a small library that validates HTTP requests and responses against an OpenAPI 3.0 specification.
 
-It is designed to be used with multiple web servers and currently supports:
+It is designed to work with any web servers/framework that uses the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) such as:
 
-* [AWS Lambda](https://aws.amazon.com/lambda/)
+* [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 * [Astro](https://astro.build/)
 * [Remix](https://remix.run/)
 
-Coming soon:
+It also provides adapters for non-Fetch based web servers/frameworks such as:
 
-* [Express](https://expressjs.com/)
-* [Fastify](https://www.fastify.io/)
+* [AWS Lambda](https://aws.amazon.com/lambda/)
+* [Express](https://expressjs.com/) (coming soon)
+* [Fastify](https://www.fastify.io/) (coming soon)
+
+OpenAPI Routes is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi). Rather than writing OpenAPI specifications by hand, you write Zod schemas and then generate OpenAPI specifications from them.
 
 ## Installation
 
@@ -21,7 +24,8 @@ npm install --save fetch-openapi-handler
 
 ## Usage
 
-There are three main steps:
+There are two or three steps, depending on your web server:
+
 1. Define an OpenAPI route
 2. Write a handler function
 3. Register the handler function (if you're using a web server that does not use the Fetch API)
