@@ -7,6 +7,7 @@ import {
   badThing,
   goodParams,
   goodThing,
+  respondWithBadTypeParams,
   thingRequest,
   thingRoute,
 } from './test_helpers';
@@ -45,5 +46,13 @@ describe('FetchRoute', () => {
         return true;
       },
     );
+  });
+
+  it('responds with 500 for malformed response body', async () => {
+    const response = await thingRoute({
+      params: respondWithBadTypeParams,
+      request: thingRequest(respondWithBadTypeParams, goodThing),
+    });
+    assert.strictEqual(response.status, 500);
   });
 });

@@ -185,7 +185,6 @@ function response(routeConfig: RouteConfig, body: unknown, status: number): Resp
 }
 
 function errorResponse(message: string): Response {
-  console.error(message);
   return new Response(message, {
     status: 500,
     headers: {

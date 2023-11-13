@@ -13,6 +13,7 @@ import {
   badThing,
   goodParams,
   goodThing,
+  respondWithBadTypeParams,
   thingRequest,
   thingRoute,
 } from '../test_helpers.js';
@@ -55,6 +56,20 @@ describe('proxyHandler', () => {
       callback,
     )) as APIGatewayProxyStructuredResultV2;
     expect(result.statusCode).toEqual(422);
+  });
+
+  it('responds with 500 for malformed response body', async () => {
+    const proxyHandler = toProxyHandler(thingRoute);
+    const event = await toEvent(
+      thingRequest(respondWithBadTypeParams, goodThing),
+      respondWithBadTypeParams,
+    );
+    const result = (await proxyHandler(
+      event,
+      context,
+      callback,
+    )) as APIGatewayProxyStructuredResultV2;
+    expect(result.statusCode).toEqual(500);
   });
 });
 

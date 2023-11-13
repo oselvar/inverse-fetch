@@ -61,8 +61,15 @@ export const badParams: ThingParams = {
   thingId: 'xyz',
 };
 
+export const respondWithBadTypeParams: ThingParams = {
+  thingId: '2',
+};
+
 export const thingRoute: FetchRoute = async ({ params, request }) => {
   const { body, respond } = await makeOpenAPI(thingRouteConfig, params, request);
+  if (params.thingId === respondWithBadTypeParams.thingId) {
+    return respond({ foo: 'bar' }, 200);
+  }
   return respond(body, 200);
 };
 
