@@ -1,7 +1,7 @@
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import { FetchRoute, makeOpenAPI, Response404, Response422, Response500 } from '.';
+import { FetchRoute, Response404, Response422, Response500, validate } from '.';
 
 const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
@@ -67,7 +67,12 @@ export const respondWithBadTypeParams: ThingParams = {
 };
 
 export const thingRoute: FetchRoute = async ({ params, request }) => {
-  const { body, respond } = await makeOpenAPI<ThingParams, ThingBody>(routeConfig, params, request);
+  const { body, respond, response } = await validate<ThingParams, ThingBody>(
+    routeConfig,
+    params,
+    request,
+  );
+  if (response) return response;
   if (params.thingId === respondWithBadTypeParams.thingId) {
     return respond({ foo: 'bar' }, 200);
   }

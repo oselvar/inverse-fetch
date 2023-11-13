@@ -23,29 +23,19 @@ describe('FetchRoute', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    await assert.rejects(
-      thingRoute({
-        params: badParams,
-        request: thingRequest(badParams, goodThing),
-      }),
-      (response: Response) => {
-        assert.strictEqual(response.status, 404);
-        return true;
-      },
-    );
+    const response = await thingRoute({
+      params: badParams,
+      request: thingRequest(badParams, goodThing),
+    });
+    assert.strictEqual(response.status, 404);
   });
 
   it('responds with 422 for malformed request body', async () => {
-    await assert.rejects(
-      thingRoute({
-        params: goodParams,
-        request: thingRequest(goodParams, badThing),
-      }),
-      (response: Response) => {
-        assert.strictEqual(response.status, 422);
-        return true;
-      },
-    );
+    const response = await thingRoute({
+      params: goodParams,
+      request: thingRequest(goodParams, badThing),
+    });
+    assert.strictEqual(response.status, 422);
   });
 
   it('responds with 500 for malformed response body', async () => {

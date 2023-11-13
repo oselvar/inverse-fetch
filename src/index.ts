@@ -52,80 +52,113 @@ export const Response500: ResponseConfig = {
   },
 };
 
-export type OpenAPI<Params extends TypedPathParams, RequestBody> = {
-  body: RequestBody;
-  params: Params;
+export type ValidationResult<Params extends TypedPathParams, RequestBody> =
+  | ValidationError<Params, RequestBody>
+  | ValidationSuccess<Params, RequestBody>;
+
+export type ValidationError<Params extends TypedPathParams, RequestBody> = {
+  params: Params | null;
+  body: RequestBody | null;
   respond: Respond;
+  response: Response;
+};
+
+export type ValidationSuccess<Params extends TypedPathParams, RequestBody> = {
+  params: Params;
+  body: RequestBody;
+  respond: Respond;
+  response: null;
 };
 
 type ValidateResult<T> = ValidateSuccess<T> | ValidateError;
 
 type ValidateSuccess<T> = {
-  success: true;
   data: T;
+  response: null;
 };
 
 type ValidateError = {
-  success: false;
-  errorMessage: string;
+  data: null;
+  response: Response;
 };
 
-function validate<T>(schema: ZodType<T>, value: unknown, name: string): ValidateResult<T> {
+function validateObject<T>(
+  schema: ZodType<T>,
+  value: unknown,
+  name: string,
+  errorStatus: number,
+): ValidateResult<T> {
   const result = schema.safeParse(value) as SafeParseReturnType<unknown, T>;
   if (result.success) {
     return {
-      success: true,
       data: result.data,
+      response: null,
     };
   }
   const valueJson = JSON.stringify(value, null, 2);
   const schemaJson = JSON.stringify(zodToJsonSchema(schema), null, 2);
   const errorMessage = `Error validating ${name}: ${valueJson}\n\nSchema: ${schemaJson}`;
   return {
-    success: false,
-    errorMessage,
+    data: null,
+    response: textResponse(errorMessage, errorStatus),
   };
 }
 
 export type HandleRequest<Params extends TypedPathParams, RequestBody> = (
-  context: OpenAPI<Params, RequestBody>,
+  context: ValidationResult<Params, RequestBody>,
 ) => Promise<Response>;
 
-export async function makeOpenAPI<
+export async function validate<
   Params extends TypedPathParams = TypedPathParams,
   RequestBody = unknown,
 >(
   routeConfig: RouteConfig,
   params: PathParams,
   request: Request,
-): Promise<OpenAPI<Params, RequestBody>> {
+): Promise<ValidationResult<Params, RequestBody>> {
   const respond: Respond = (body, status) => response(routeConfig, body, status);
 
   const requestParamsResult = parseRequestParams<Params>(routeConfig, params);
-  if (!requestParamsResult.success) {
-    throw respond(requestParamsResult.errorMessage, 404);
+  if (requestParamsResult.response) {
+    return {
+      params: null,
+      body: null,
+      respond,
+      response: requestParamsResult.response,
+    };
   }
 
   const requestBodyResult = await parseRequestBody<RequestBody>(routeConfig, request);
-  if (!requestBodyResult.success) {
-    throw respond(requestBodyResult.errorMessage, 422);
+  if (requestBodyResult.response) {
+    return {
+      params: requestParamsResult.data,
+      body: null,
+      respond,
+      response: requestBodyResult.response,
+    };
   }
 
-  const openapi: OpenAPI<Params, RequestBody> = {
+  return {
     params: requestParamsResult.data,
     body: requestBodyResult.data,
     respond,
+    response: null,
   };
-
-  return openapi;
 }
 
 function parseRequestParams<T>(routeConfig: RouteConfig, params: Json): ValidateResult<T> {
   const schema = routeConfig.request?.params;
-  if (schema === undefined) throw errorResponse('No request params schema');
+  if (schema === undefined)
+    return {
+      data: null,
+      response: textResponse('No request params schema', 500),
+    };
   if (!(schema instanceof ZodType))
-    throw errorResponse(`Request params schema is not a zod schema`);
-  return validate<T>(schema as unknown as ZodType<T>, params, 'request params');
+    return {
+      data: null,
+      response: textResponse('Request params schema is not a zod schema', 500),
+    };
+  return validateObject<T>(schema as unknown as ZodType<T>, params, 'request params', 404);
 }
 
 async function parseRequestBody<T>(
@@ -135,25 +168,34 @@ async function parseRequestBody<T>(
   const contentType = request.headers.get('content-type');
   if (contentType) {
     const contentObject = routeConfig.request?.body?.content;
-    if (!contentObject) throw errorResponse('No content object');
+    if (!contentObject)
+      return {
+        data: null,
+        response: textResponse('No content object', 500),
+      };
     const schema = contentObject[contentType].schema;
-    if (!(schema instanceof ZodType))
-      throw errorResponse(`Request body schema is not a zod schema`);
+    if (!(schema instanceof ZodType)) {
+      return {
+        data: null,
+        response: textResponse('Request body schema is not a zod schema', 500),
+      };
+    }
     const body = await request.json();
-    return validate<T>(
+    return validateObject<T>(
       schema as ZodType<T>,
       body,
       `request body for ${request.method} ${request.url}`,
+      422,
     );
   }
-  return { data: null as T, success: true };
+  return { data: null as T, response: null };
 }
 
 function response(routeConfig: RouteConfig, body: unknown, status: number): Response {
   const responseConfig = routeConfig.responses[status];
-  if (!responseConfig) return errorResponse(`No response config for status ${status}`);
+  if (!responseConfig) return textResponse(`No response config for status ${status}`, 500);
   if (!responseConfig.content)
-    return errorResponse(`No response config content for status ${status}`);
+    return textResponse(`No response config content for status ${status}`, 500);
 
   if (typeof body === 'string') {
     return new Response(JSON.stringify(body), {
@@ -166,11 +208,11 @@ function response(routeConfig: RouteConfig, body: unknown, status: number): Resp
     const contentType = 'application/json';
     const schema = responseConfig.content[contentType].schema;
     if (!(schema instanceof ZodType))
-      return errorResponse(`Response body schema is not a zod schema`);
-    const result = validate(schema as ZodType<unknown>, body, 'response body');
+      return textResponse(`Response body schema is not a zod schema`, 500);
+    const result = validateObject(schema as ZodType<unknown>, body, 'response body', 500);
 
-    if (!result.success) {
-      return errorResponse(result.errorMessage);
+    if (result.response) {
+      return result.response;
     }
     return new Response(JSON.stringify(result.data), {
       status,
@@ -179,13 +221,13 @@ function response(routeConfig: RouteConfig, body: unknown, status: number): Resp
       },
     });
   } else {
-    return errorResponse(`Invalid body type: ${typeof body}`);
+    return textResponse(`Invalid body type: ${typeof body}`, 415);
   }
 }
 
-function errorResponse(message: string): Response {
+function textResponse(message: string, status: number): Response {
   return new Response(message, {
-    status: 500,
+    status,
     headers: {
       'Content-Type': 'text/plain',
     },

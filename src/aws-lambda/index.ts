@@ -12,13 +12,8 @@ export function toProxyHandler(fetchRoute: FetchRoute): ProxyHandler {
   return async (event) => {
     const params = event.pathParameters || {};
     const request = toRequest(event);
-    try {
-      const response = await fetchRoute({ params, request });
-      return toResult(response);
-    } catch (error) {
-      if (error instanceof Response) return toResult(error);
-      throw error;
-    }
+    const response = await fetchRoute({ params, request });
+    return toResult(response);
   };
 }
 

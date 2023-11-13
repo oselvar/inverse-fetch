@@ -19,7 +19,7 @@ OpenAPI Routes is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](h
 ## Installation
 
 ```bash
-npm install --save fetch-openapi-handler
+npm install --save @oselvar/openapi-routes
 ```
 
 ## Usage
@@ -33,7 +33,7 @@ There are two or three steps, depending on your web server:
 ### Define an OpenAPI route
 
 ```typescript
-import { FetchOpenAPIHandler } from 'fetch-openapi-handler';
+import { FetchOpenAPIHandler } from '@oselvar/openapi-routes';
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
@@ -50,16 +50,20 @@ If you are using a framework that does *not* use the Fetch API [Request](https:/
 such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressjs.com/) or [Fastify](https://www.fastify.io/), use the `FetchRoute` type to define your handler function:
 
 ```typescript
-import { FetchRoute } from 'fetch-openapi-handler';
+import { FetchRoute } from '@oselvar/openapi-routes';
 
 export const fetchRoute: FetchRoute = async ({ params, request }) => {
   // If the params are not valid, a 404 Response will be thrown
   // If the request body is not valid, a 422 Response will be thrown
-  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(
+  const { params, body, respond, response } = await validate<ThingParams, ThingBody>(
     routeConfig, 
     params, 
     request
   );
+  if (response) {
+    // There was a request validation error
+    return response;
+  }
 
   // Do something with params and body
 
@@ -71,7 +75,7 @@ export const fetchRoute: FetchRoute = async ({ params, request }) => {
 
 The `FetchRoute` handler can then be registered with your HTTP server (see below).
 
-If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can write your handler using the framework's API and still use the `makeOpenAPI` function.
+If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can write your handler using the framework's API and still use the `validate` function.
 
 The following example uses [Astro API Routes](https://docs.astro.build/en/core-concepts/endpoints/#server-endpoints-api-routes):
 
@@ -79,7 +83,7 @@ The following example uses [Astro API Routes](https://docs.astro.build/en/core-c
 import type { APIRoute } from 'astro';
 
 export const POST: APIRoute = async (context) => {
-  const { params, body, respond } = await makeOpenAPI<ThingParams, ThingBody>(
+  const { params, body, respond } = await validate<ThingParams, ThingBody>(
     routeConfig, 
     context.params, 
     context.request
@@ -104,8 +108,8 @@ For example, you can register your handler functions with Express or Fastify dur
 #### AWS Lambda
 
 ```typescript
-import { FetchOpenAPIHandler } from 'fetch-openapi-handler';
-import { toProxyHandler } from 'fetch-openapi-handler/aws-lambda';
+import { FetchOpenAPIHandler } from '@oselvar/openapi-routes';
+import { toProxyHandler } from '@oselvar/openapi-routes/aws-lambda';
 
 export const handler = toProxyHandler(fetchRoute);
 ```
