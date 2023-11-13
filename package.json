@@ -1,6 +1,6 @@
 {
   "name": "@oselvar/openapi-routes",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Supabase Realtime on Absinthe",
   "author": {
     "name": "Oselvar Ltd",
@@ -35,7 +35,8 @@
     "prepare": "husky install",
     "lint-staged": "lint-staged",
     "format": "prettier './**/*.ts' --write",
-    "lint": "eslint './**/*.ts' --fix"
+    "lint": "eslint './**/*.ts' --fix",
+    "prepublishOnly": "npm run build"
   },
   "repository": "oselvar/openapi-routes",
   "license": "MIT",
