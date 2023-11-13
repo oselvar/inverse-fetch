@@ -2,6 +2,17 @@
 
 *Fetch OpenAPI Handler* is a library that simplifies validation of HTTP requests and responses against an OpenAPI 3.0 specification.
 
+It is designed to be used with multiple web servers and currently supports:
+
+* [AWS Lambda](https://aws.amazon.com/lambda/)
+* [Astro](https://astro.build/)
+* [Remix](https://remix.run/)
+
+Coming soon:
+
+* [Express](https://expressjs.com/)
+* [Fastify](https://www.fastify.io/)
+
 ## Installation
 
 ```bash
