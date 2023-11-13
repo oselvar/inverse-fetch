@@ -100,6 +100,7 @@ export const POST: APIRoute = async (context) => {
 
 Convert the handler function to a function that can be registered with your HTTP server.
 
+
 Note that the support for multiple HTTP servers can also simplify your developer experience.
 You can write your handler function once and then register it with multiple HTTP servers.
 
