@@ -27,24 +27,89 @@ npm install --save @oselvar/openapi-routes
 There are two or three steps, depending on your web server:
 
 1. Define an OpenAPI route
-2. Write a handler function
-3. Register the handler function (if you're using a web server that does not use the Fetch API)
+2. Create a validator
+3. Validate requests and responses
 
 ### Define an OpenAPI route
 
 ```typescript
-import { FetchOpenAPIHandler } from '@oselvar/openapi-routes';
+import { Validator } from '@oselvar/openapi-routes';
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 
+// Define Zod schemas for the request parameters, query and body
+
+const ThingParamsSchema = z.object({
+  thingId: z.string().regex(/[\d]+/),
+});
+
+const ThingQuerySchema = z.object({
+  thingId: z.string().regex(/[\d]+/).optional(),
+});
+
+const ThingBodySchema = z.object({
+  name: z.string().regex(/[a-z]+/),
+  description: z.string().regex(/[a-z]+/),
+});
+
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
+
 const routeConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
-  // more properties...
-}
+  request: {
+    params: ThingParamsSchema,
+    query: ThingQuerySchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: ThingBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Create a thing',
+      content: {
+        'application/json': {
+          schema: ThingBodySchema,
+        },
+      },
+    },
+    404: Response404,
+    415: Response415,
+    422: Response422,
+    500: Response500,
+  },
+};
 ```
 
-### Write a handler function
+### Create a validator
+
+The `Validator` class uses the schemas in the `routeConfig` object to validate requests and responses.
+
+```typescript
+const validator = new Validator(routeConfig);
+```
+
+### Validate requests and responses
+
+Your web server will provide a `Request` object and a parameter object.
+
+(If your web server does not use the Fetch API, see the [Adapters](#adapters) section below.)
+
+```typescript
+const request: Request = ...;
+const params: StringParams = ...;
+
+// Any of the methods below will throw a ValidationError if the request or response is invalid
+
+const params = validator.params<z.infer<typeof ThingParamsSchema>>(context.params);
+const body = await validator.body<z.infer<typeof ThingBodySchema>>(context.request);
+const response = validator.Response.json(body);
+```
+
+## Adapters
 
 If you are using a framework that does *not* use the Fetch API [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects
 such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressjs.com/) or [Fastify](https://www.fastify.io/), use the `FetchRoute` type to define your handler function:
@@ -52,59 +117,19 @@ such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressj
 ```typescript
 import { FetchRoute } from '@oselvar/openapi-routes';
 
-export const fetchRoute: FetchRoute = async ({ params, request }) => {
-  // If the params are not valid, a 404 Response will be thrown
-  // If the request body is not valid, a 422 Response will be thrown
-  const { params, body, respond, response } = await validate<ThingParams, ThingBody>(
-    routeConfig, 
-    params, 
-    request
-  );
-  if (response) {
-    // There was a request validation error
-    return response;
-  }
-
-  // Do something with params and body
-
-  const responseBody = { message: 'Hello, world!' };
-  // If the response body is not valid, a 500 Response will be returned
-  return respond(responseBody, 200);
+const fetchRoute: FetchRoute = async (context) => {
+  const params = validator.params<z.infer<typeof ThingParamsSchema>>(context.params);
+  const body = await validator.body<z.infer<typeof ThingBodySchema>>(context.request);
+  return validator.Response.json(body);
 };
 ```
-
-The `FetchRoute` handler can then be registered with your HTTP server (see below).
-
-If you are using a framework that *does use* `Request` and `Response` such as [Astro](https://astro.build/) or [Remix](https://remix.run/), you can write your handler using the framework's API and still use the `validate` function.
-
-The following example uses [Astro API Routes](https://docs.astro.build/en/core-concepts/endpoints/#server-endpoints-api-routes):
-
-```typescript
-import type { APIRoute } from 'astro';
-
-export const POST: APIRoute = async (context) => {
-  const { params, body, respond } = await validate<ThingParams, ThingBody>(
-    routeConfig, 
-    context.params, 
-    context.request
-  );
-
-  const responseBody = { message: 'Hello, world!' };
-  return respond(responseBody, 200);
-};
-```
-
-### Register the handler function
-
-*This section is for web servers that do not use the Fetch API.*
-
-Convert the handler function to a function that can be registered with your HTTP server.
-
 
 Note that the support for multiple HTTP servers can also simplify your developer experience.
 You can write your handler function once and then register it with multiple HTTP servers.
 
 For example, you can register your handler functions with Express or Fastify during development and then register them with AWS Lambda during production.
+
+The next step is to convert the `FetchRoute` to a function that can be registered with your HTTP server.
 
 #### AWS Lambda
 

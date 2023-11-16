@@ -1,10 +1,50 @@
-import { RouteConfig } from '@asteasolutions/zod-to-openapi';
+import { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import { FetchRoute, Response404, Response422, Response500, validate } from '.';
+import { FetchRoute, ValidationError, Validator } from '.';
+
+const Response404: ResponseConfig = {
+  description: 'Not Found',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
+
+const Response415: ResponseConfig = {
+  description: 'Unsupported Media Type',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
+
+const Response422: ResponseConfig = {
+  description: 'Unprocessable Entity',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
+
+const Response500: ResponseConfig = {
+  description: 'Internal Server Error',
+  content: {
+    'application/text': {
+      schema: z.string(),
+    },
+  },
+};
 
 const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
+});
+
+const ThingQuerySchema = z.object({
+  thingId: z.string().regex(/[\d]+/).optional(),
 });
 
 const ThingBodySchema = z.object({
@@ -17,6 +57,7 @@ const routeConfig: RouteConfig = {
   path: '/things/{thingId}',
   request: {
     params: ThingParamsSchema,
+    query: ThingQuerySchema,
     body: {
       content: {
         'application/json': {
@@ -35,10 +76,13 @@ const routeConfig: RouteConfig = {
       },
     },
     404: Response404,
+    415: Response415,
     422: Response422,
     500: Response500,
   },
 };
+
+const validator = new Validator(routeConfig);
 
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
@@ -66,17 +110,26 @@ export const respondWithBadTypeParams: ThingParams = {
   thingId: '2',
 };
 
-export const thingRoute: FetchRoute = async ({ params, request }) => {
-  const { body, respond, response } = await validate<ThingParams, ThingBody>(
-    routeConfig,
-    params,
-    request,
-  );
-  if (response) return response;
+const _thingRoute: FetchRoute = async (ctx) => {
+  const params = validator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
+  const body = await validator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
   if (params.thingId === respondWithBadTypeParams.thingId) {
-    return respond({ foo: 'bar' }, 200);
+    return validator.Response.json({ foo: 'bar' });
   }
-  return respond(body, 200);
+  return validator.Response.json(body);
+};
+
+export const thingRoute: FetchRoute = async (ctx) => {
+  try {
+    return await _thingRoute(ctx);
+  } catch (e) {
+    if (e instanceof Error) {
+      const status = e instanceof ValidationError ? e.status : 500;
+      return new Response(e.message, { status });
+    } else {
+      return new Response('Unknown error', { status: 500 });
+    }
+  }
 };
 
 export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {

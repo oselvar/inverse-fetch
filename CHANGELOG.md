@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Refactored the code to use a `Validator` class to validate objects independently.
+- Thrown errors have to be handled explicitly.
+- Use `Response.json()` to create a JSON response.
 
 ## [0.0.4] - 2023-11-13
 ### Fixed
