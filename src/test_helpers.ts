@@ -1,43 +1,17 @@
-import { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi';
+import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import { FetchRoute, ValidationError, Validator } from '.';
+import {
+  FetchRoute,
+  Response404,
+  Response415,
+  Response422,
+  Response500,
+  unwrapError,
+  Validator,
+} from '.';
 
-const Response404: ResponseConfig = {
-  description: 'Not Found',
-  content: {
-    'application/text': {
-      schema: z.string(),
-    },
-  },
-};
-
-const Response415: ResponseConfig = {
-  description: 'Unsupported Media Type',
-  content: {
-    'application/text': {
-      schema: z.string(),
-    },
-  },
-};
-
-const Response422: ResponseConfig = {
-  description: 'Unprocessable Entity',
-  content: {
-    'application/text': {
-      schema: z.string(),
-    },
-  },
-};
-
-const Response500: ResponseConfig = {
-  description: 'Internal Server Error',
-  content: {
-    'application/text': {
-      schema: z.string(),
-    },
-  },
-};
+// Define Zod schemas for the request parameters, query and body
 
 const ThingParamsSchema = z.object({
   thingId: z.string().regex(/[\d]+/),
@@ -51,6 +25,8 @@ const ThingBodySchema = z.object({
   name: z.string().regex(/[a-z]+/),
   description: z.string().regex(/[a-z]+/),
 });
+
+// Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
 const routeConfig: RouteConfig = {
   method: 'post',
@@ -123,12 +99,8 @@ export const thingRoute: FetchRoute = async (ctx) => {
   try {
     return await _thingRoute(ctx);
   } catch (error) {
-    if (error instanceof Error) {
-      const status = error instanceof ValidationError ? error.status : 500;
-      return new Response(error.message, { status });
-    } else {
-      return new Response('Unknown error', { status: 500 });
-    }
+    const { response } = unwrapError(error);
+    return response;
   }
 };
 

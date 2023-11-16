@@ -1,5 +1,5 @@
-import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
-import { type SafeParseReturnType, ZodType } from 'zod';
+import type { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi';
+import { type SafeParseReturnType, z, ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export type FetchRouteContext<Params extends StringParams> = {
@@ -18,10 +18,79 @@ export type TypedParams = Record<string, string | number | undefined>;
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
 
 export class ValidationError extends Error {
-  constructor(message: string, public readonly type: ObjectType, public readonly status: number) {
+  constructor(message: string, public readonly response: Response) {
     super(message);
   }
 }
+
+export const ErrorSchema = z.object({
+  message: z.string(),
+});
+
+export function errorResponse(message: string, status: number): Response {
+  return Response.json({ message }, { status });
+}
+
+export type UnwrappedError = {
+  message: string;
+  response: Response;
+};
+
+export function unwrapError(error: unknown): UnwrappedError {
+  if (error instanceof ValidationError) {
+    return {
+      message: error.message,
+      response: error.response,
+    };
+  } else if (error instanceof Error) {
+    return {
+      message: error.message,
+      response: errorResponse(error.message, 500),
+    };
+  } else {
+    const message = 'Unknown error';
+    return {
+      message,
+      response: errorResponse(message, 500),
+    };
+  }
+}
+
+export const Response404: ResponseConfig = {
+  description: 'Not Found',
+  content: {
+    'application/json': {
+      schema: ErrorSchema,
+    },
+  },
+};
+
+export const Response415: ResponseConfig = {
+  description: 'Unsupported Media Type',
+  content: {
+    'application/json': {
+      schema: ErrorSchema,
+    },
+  },
+};
+
+export const Response422: ResponseConfig = {
+  description: 'Unprocessable Entity',
+  content: {
+    'application/json': {
+      schema: ErrorSchema,
+    },
+  },
+};
+
+export const Response500: ResponseConfig = {
+  description: 'Internal Server Error',
+  content: {
+    'application/json': {
+      schema: ErrorSchema,
+    },
+  },
+};
 
 export class Validator {
   // public readonly Response: typeof Response;
@@ -32,14 +101,14 @@ export class Validator {
 
   params<T extends TypedParams>(params: StringParams): T {
     const schema = this.routeConfig.request?.params;
-    return validateObject<T>(schema as unknown as ZodType<T>, params, 'params', 404);
+    return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', 404);
   }
 
   query<T extends TypedParams>(request: Request): T {
     const schema = this.routeConfig.request?.query;
     const url = new URL(request.url, 'http://dummy.com');
     const query = Object.fromEntries(url.searchParams.entries());
-    return validateObject<T>(schema as unknown as ZodType<T>, query, 'query', 404);
+    return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', 404);
   }
 
   async body<T>(request: Request): Promise<T> {
@@ -50,13 +119,13 @@ export class Validator {
     if (contentType === 'application/json') {
       const contentObject = this.routeConfig.request?.body?.content;
       if (!contentObject) {
-        throw new ValidationError('No content object', 'requestBody', 500);
+        throw this.makeValidationError('No content object', 500);
       }
       const schema = contentObject[contentType].schema;
       const body = await request.json();
-      return validateObject<T>(schema as ZodType<T>, body, `requestBody`, 422);
+      return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, 422);
     }
-    throw new ValidationError(`Unsupported content type: ${contentType}`, 'requestBody', 415);
+    throw this.makeValidationError(`Unsupported content type: ${contentType}`, 415);
   }
 
   async validate(response: Response): Promise<Response> {
@@ -66,10 +135,10 @@ export class Validator {
 
     const responseConfig = this.routeConfig.responses[status];
     if (!responseConfig) {
-      return new Response(`No response config for status ${status}`, { status: 500 });
+      return errorResponse(`No response config for status ${status}`, 500);
     }
     if (!responseConfig.content) {
-      return new Response(`No response config content for status ${status}`, { status: 500 });
+      return errorResponse(`No response config content for status ${status}`, 500);
     }
 
     const contentType = copy.headers.get('content-type');
@@ -77,37 +146,37 @@ export class Validator {
       const schema = responseConfig.content[contentType].schema;
       try {
         const data = await copy.json();
-        validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
+        this.validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
       } catch (error) {
-        if (error instanceof Error) {
-          const status = error instanceof ValidationError ? error.status : 500;
-          return new Response(error.message, { status });
-        } else {
-          return new Response('Unknown error', { status: 500 });
-        }
+        const { response } = unwrapError(error);
+        return response;
       }
     } else {
-      return new Response(`Invalid content-type: ${contentType}`, { status: 500 });
+      return errorResponse(`Invalid content-type: ${contentType}`, 500);
     }
     return response;
   }
-}
 
-function validateObject<T>(
-  schema: ZodType<T>,
-  value: unknown,
-  type: ObjectType,
-  errorStatus: number,
-): T {
-  if (schema === undefined) {
-    throw new ValidationError(`No ${type} schema`, 'params', 500);
+  private validateObject<T>(
+    schema: ZodType<T>,
+    value: unknown,
+    type: ObjectType,
+    errorStatus: number,
+  ): T {
+    if (schema === undefined) {
+      throw this.makeValidationError(`No ${type} schema`, 500);
+    }
+    const result = schema.safeParse(value) as SafeParseReturnType<unknown, T>;
+    if (result.success) {
+      return result.data;
+    }
+    const valueJson = JSON.stringify(value, null, 2);
+    const schemaJson = JSON.stringify(zodToJsonSchema(schema), null, 2);
+    const errorMessage = `Error validating ${type}: ${valueJson}\n\nSchema: ${schemaJson}`;
+    throw this.makeValidationError(errorMessage, errorStatus);
   }
-  const result = schema.safeParse(value) as SafeParseReturnType<unknown, T>;
-  if (result.success) {
-    return result.data;
+
+  private makeValidationError(message: string, status: number): ValidationError {
+    return new ValidationError(message, errorResponse(message, status));
   }
-  const valueJson = JSON.stringify(value, null, 2);
-  const schemaJson = JSON.stringify(zodToJsonSchema(schema), null, 2);
-  const errorMessage = `Error validating ${type}: ${valueJson}\n\nSchema: ${schemaJson}`;
-  throw new ValidationError(errorMessage, type, errorStatus);
 }
