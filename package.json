@@ -1,11 +1,11 @@
 {
-  "name": "@oselvar/openapi-routes",
+  "name": "@oselvar/openapi-validator",
   "version": "0.1.0",
-  "description": "Supabase Realtime on Absinthe",
+  "description": "Validate OpenAPI requests and responses against Zod schemas",
   "author": {
     "name": "Oselvar Ltd",
     "email": "aslak@oselvar.com",
-    "url": "https://github.com/oselvar/openapi-routes"
+    "url": "https://github.com/oselvar/openapi-validator"
   },
   "files": [
     "./dist"
@@ -29,7 +29,10 @@
     "openapi",
     "zod",
     "json-schema",
-    "astro"
+    "astro",
+    "fastify",
+    "remix",
+    "nextjs"
   ],
   "scripts": {
     "test": "vitest",

@@ -1,6 +1,4 @@
-# openapi-routes
-
-*OpenAPI Routes* is a small library that validates HTTP requests and responses against an OpenAPI 3.0 specification.
+This is a small library that validates HTTP requests and responses against an OpenAPI 3.0 specification.
 
 It is designed to work with any web servers/framework that uses the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) such as:
 
@@ -16,24 +14,26 @@ It also provides adapters for non-Fetch based web servers/frameworks such as:
 
 OpenAPI Routes is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi). Rather than writing OpenAPI specifications by hand, you write Zod schemas and then generate OpenAPI specifications from them.
 
+- [Installation](#installation)
+- [Define an OpenAPI route](#define-an-openapi-route)
+- [Create a validator](#create-a-validator)
+- [Validate requests and responses](#validate-requests-and-responses)
+- [Error handling](#error-handling)
+- [Adapters](#adapters)
+  - [AWS Lambda](#aws-lambda)
+  - [Express](#express)
+  - [Fastify](#fastify)
+
 ## Installation
 
 ```bash
-npm install --save @oselvar/openapi-routes
+npm install --save @oselvar/openapi-validator
 ```
 
-## Usage
-
-There are two or three steps, depending on your web server:
-
-1. Define an OpenAPI route
-2. Create a validator
-3. Validate requests and responses
-
-### Define an OpenAPI route
+## Define an OpenAPI route
 
 ```typescript
-import { Validator } from '@oselvar/openapi-routes';
+import { Validator } from '@oselvar/openapi-validator';
 import { RouteConfig } from '@asteasolutions/zod-to-openapi';
 
 // Define Zod schemas for the request parameters, query and body
@@ -84,7 +84,7 @@ const routeConfig: RouteConfig = {
 };
 ```
 
-### Create a validator
+## Create a validator
 
 The `Validator` class uses the schemas in the `routeConfig` object to validate requests and responses.
 
@@ -92,7 +92,7 @@ The `Validator` class uses the schemas in the `routeConfig` object to validate r
 const validator = new Validator(routeConfig);
 ```
 
-### Validate requests and responses
+## Validate requests and responses
 
 Your web server will provide a `Request` object and a parameter object.
 
@@ -102,11 +102,29 @@ Your web server will provide a `Request` object and a parameter object.
 const request: Request = ...;
 const params: StringParams = ...;
 
-// Any of the methods below will throw a ValidationError if the request or response is invalid
-
 const params = validator.params<z.infer<typeof ThingParamsSchema>>(context.params);
 const body = await validator.body<z.infer<typeof ThingBodySchema>>(context.request);
 const response = validator.Response.json(body);
+```
+
+## Error handling
+
+The `Validator` methods will throw a `ValidationError` if the request or response is invalid.
+You must handle this error and return an appropriate HTTP response.
+
+We recommend doing this in a middleware function. Please refer to your web server's documentation for more information.
+
+```typescript
+try {
+  // Run the handler function
+} catch (e) {
+  if (e instanceof Error) {
+    const status = e instanceof ValidationError ? e.status : 500;
+    return new Response(e.message, { status });
+  } else {
+    return new Response('Unknown error', { status: 500 });
+  }
+}
 ```
 
 ## Adapters
@@ -115,7 +133,7 @@ If you are using a framework that does *not* use the Fetch API [Request](https:/
 such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressjs.com/) or [Fastify](https://www.fastify.io/), use the `FetchRoute` type to define your handler function:
 
 ```typescript
-import { FetchRoute } from '@oselvar/openapi-routes';
+import { FetchRoute } from '@oselvar/openapi-validator';
 
 const fetchRoute: FetchRoute = async (context) => {
   const params = validator.params<z.infer<typeof ThingParamsSchema>>(context.params);
@@ -131,19 +149,19 @@ For example, you can register your handler functions with Express or Fastify dur
 
 The next step is to convert the `FetchRoute` to a function that can be registered with your HTTP server.
 
-#### AWS Lambda
+### AWS Lambda
 
 ```typescript
-import { FetchOpenAPIHandler } from '@oselvar/openapi-routes';
-import { toProxyHandler } from '@oselvar/openapi-routes/aws-lambda';
+import { FetchOpenAPIHandler } from '@oselvar/openapi-validator';
+import { toProxyHandler } from '@oselvar/openapi-validator/aws-lambda';
 
 export const handler = toProxyHandler(fetchRoute);
 ```
 
-#### Express
+### Express
 
 Coming soon.
 
-#### Fastify
+### Fastify
 
 Coming soon.
