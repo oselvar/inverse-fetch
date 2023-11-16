@@ -3,4 +3,5 @@
 ## Release Process
 
   polyglot-release X.Y.Z
-  npm publish --access public --tag vX.Y.Z
+  git tag vX.Y.Z
+  npm publish --access public
