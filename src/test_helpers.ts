@@ -114,18 +114,18 @@ const _thingRoute: FetchRoute = async (ctx) => {
   const params = validator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
   const body = await validator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
   if (params.thingId === respondWithBadTypeParams.thingId) {
-    return validator.Response.json({ foo: 'bar' });
+    return validator.validate(Response.json({ foo: 'bar' }));
   }
-  return validator.Response.json(body);
+  return validator.validate(Response.json(body));
 };
 
 export const thingRoute: FetchRoute = async (ctx) => {
   try {
     return await _thingRoute(ctx);
-  } catch (e) {
-    if (e instanceof Error) {
-      const status = e instanceof ValidationError ? e.status : 500;
-      return new Response(e.message, { status });
+  } catch (error) {
+    if (error instanceof Error) {
+      const status = error instanceof ValidationError ? error.status : 500;
+      return new Response(error.message, { status });
     } else {
       return new Response('Unknown error', { status: 500 });
     }

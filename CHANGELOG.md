@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Added a `validate` method for validating responses.
+
 ## [0.1.0] - 2023-11-16
 ### Changed
 - Renamed to `@oselvar/openapi-validator`.

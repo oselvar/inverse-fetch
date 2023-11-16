@@ -23,47 +23,11 @@ export class ValidationError extends Error {
   }
 }
 
-export type ValidatingResponse = Pick<typeof Response, 'json'>;
-
 export class Validator {
-  public readonly Response: ValidatingResponse;
+  // public readonly Response: typeof Response;
 
   constructor(private routeConfig: RouteConfig) {
-    this.Response = {
-      json(data, init) {
-        const response = Response.json(data, init);
-        const status = response.status;
-
-        const responseConfig = routeConfig.responses[status];
-        if (!responseConfig) {
-          return new Response(`No response config for status ${status}`, { status: 500 });
-        }
-        if (!responseConfig.content) {
-          return new Response(`No response config content for status ${status}`, { status: 500 });
-        }
-
-        if (typeof data === 'object') {
-          const contentType = 'application/json';
-          const schema = responseConfig.content[contentType].schema;
-          try {
-            validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
-          } catch (error) {
-            if (error instanceof ValidationError) {
-              return new Response(error.message, { status: error.status });
-            }
-            throw error;
-          }
-        } else {
-          throw new ValidationError(
-            `Invalid response body type: ${typeof data}`,
-            'responseBody',
-            500,
-          );
-        }
-
-        return response;
-      },
-    };
+    // this.Response = makeResponse(routeConfig);
   }
 
   params<T extends TypedParams>(params: StringParams): T {
@@ -93,6 +57,39 @@ export class Validator {
       return validateObject<T>(schema as ZodType<T>, body, `requestBody`, 422);
     }
     throw new ValidationError(`Unsupported content type: ${contentType}`, 'requestBody', 415);
+  }
+
+  async validate(response: Response): Promise<Response> {
+    const copy = response.clone();
+
+    const status = copy.status;
+
+    const responseConfig = this.routeConfig.responses[status];
+    if (!responseConfig) {
+      return new Response(`No response config for status ${status}`, { status: 500 });
+    }
+    if (!responseConfig.content) {
+      return new Response(`No response config content for status ${status}`, { status: 500 });
+    }
+
+    const contentType = copy.headers.get('content-type');
+    if (contentType === 'application/json') {
+      const schema = responseConfig.content[contentType].schema;
+      try {
+        const data = await copy.json();
+        validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
+      } catch (error) {
+        if (error instanceof Error) {
+          const status = error instanceof ValidationError ? error.status : 500;
+          return new Response(error.message, { status });
+        } else {
+          return new Response('Unknown error', { status: 500 });
+        }
+      }
+    } else {
+      return new Response(`Invalid content-type: ${contentType}`, { status: 500 });
+    }
+    return response;
   }
 }
 
