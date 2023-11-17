@@ -7,7 +7,7 @@ import {
   Response415,
   Response422,
   Response500,
-  unwrapError,
+  toHttpError,
   Validator,
 } from '.';
 
@@ -99,7 +99,7 @@ export const thingRoute: FetchRoute = async (ctx) => {
   try {
     return await _thingRoute(ctx);
   } catch (error) {
-    const { response } = unwrapError(error);
+    const { response } = toHttpError(error);
     return response;
   }
 };

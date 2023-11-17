@@ -17,9 +17,12 @@ export type TypedParams = Record<string, string | number | undefined>;
 
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
 
-export class ValidationError extends Error {
-  constructor(message: string, public readonly response: Response) {
+export class HttpError extends Error {
+  public readonly response: Response;
+
+  constructor(message: string, status: number) {
     super(message);
+    this.response = errorResponse(message, status);
   }
 }
 
@@ -27,32 +30,21 @@ export const ErrorSchema = z.object({
   message: z.string(),
 });
 
-export function errorResponse(message: string, status: number): Response {
-  return Response.json({ message }, { status });
-}
-
 export type UnwrappedError = {
   message: string;
   response: Response;
 };
 
-export function unwrapError(error: unknown): UnwrappedError {
-  if (error instanceof ValidationError) {
-    return {
-      message: error.message,
-      response: error.response,
-    };
+export function toHttpError(error: unknown): HttpError {
+  if (error instanceof HttpError) {
+    return error;
   } else if (error instanceof Error) {
-    return {
-      message: error.message,
-      response: errorResponse(error.message, 500),
-    };
+    const httpError = new HttpError(error.message, 500);
+    httpError.cause = error;
+    return httpError;
   } else {
     const message = 'Unknown error';
-    return {
-      message,
-      response: errorResponse(message, 500),
-    };
+    return new HttpError(message, 500);
   }
 }
 
@@ -116,16 +108,19 @@ export class Validator {
     if (!contentType) {
       return null as T;
     }
+    const schema = this.routeConfig.request?.body?.content[contentType]?.schema;
+    if (!schema) {
+      throw new HttpError(`No schema for Content-Type: ${contentType}`, 415);
+    }
     if (contentType === 'application/json') {
-      const contentObject = this.routeConfig.request?.body?.content;
-      if (!contentObject) {
-        throw this.makeValidationError('No content object', 500);
-      }
-      const schema = contentObject[contentType].schema;
       const body = await request.json();
       return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, 422);
+    } else if (contentType === 'application/x-www-form-urlencoded') {
+      const body = await request.formData();
+      const data = Object.fromEntries(body.entries());
+      return this.validateObject<T>(schema as ZodType<T>, data, `requestBody`, 422);
     }
-    throw this.makeValidationError(`Unsupported content type: ${contentType}`, 415);
+    throw new HttpError(`Unsupported Content-Type: ${contentType}`, 415);
   }
 
   async validate(response: Response): Promise<Response> {
@@ -148,7 +143,7 @@ export class Validator {
         const data = await copy.json();
         this.validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
       } catch (error) {
-        const { response } = unwrapError(error);
+        const { response } = toHttpError(error);
         return response;
       }
     } else {
@@ -164,7 +159,7 @@ export class Validator {
     errorStatus: number,
   ): T {
     if (schema === undefined) {
-      throw this.makeValidationError(`No ${type} schema`, 500);
+      throw new HttpError(`No ${type} schema`, 500);
     }
     const result = schema.safeParse(value) as SafeParseReturnType<unknown, T>;
     if (result.success) {
@@ -173,10 +168,16 @@ export class Validator {
     const valueJson = JSON.stringify(value, null, 2);
     const schemaJson = JSON.stringify(zodToJsonSchema(schema), null, 2);
     const errorMessage = `Error validating ${type}: ${valueJson}\n\nSchema: ${schemaJson}`;
-    throw this.makeValidationError(errorMessage, errorStatus);
+    throw new HttpError(errorMessage, errorStatus);
   }
+}
 
-  private makeValidationError(message: string, status: number): ValidationError {
-    return new ValidationError(message, errorResponse(message, status));
-  }
+/**
+ * Creates a Response with a { message } response body.
+ * @param message the error message
+ * @param status the HTTP status code
+ * @returns a Response
+ */
+export function errorResponse(message: string, status: number): Response {
+  return Response.json({ message }, { status });
 }

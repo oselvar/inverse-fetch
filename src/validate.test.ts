@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -27,7 +25,7 @@ describe('FetchRoute', () => {
       params: badParams,
       request: thingRequest(badParams, goodThing),
     });
-    assert.strictEqual(response.status, 404);
+    expect(response.status).toEqual(404);
   });
 
   it('responds with 415 for unsupported media type', async () => {
@@ -41,7 +39,7 @@ describe('FetchRoute', () => {
         body: `foo,bar,baz\n1,2,3`,
       }),
     });
-    assert.strictEqual(response.status, 415);
+    expect(response.status).toEqual(415);
   });
 
   it('responds with 422 for malformed request body', async () => {
@@ -49,7 +47,7 @@ describe('FetchRoute', () => {
       params: goodParams,
       request: thingRequest(goodParams, badThing),
     });
-    assert.strictEqual(response.status, 422);
+    expect(response.status).toEqual(422);
   });
 
   it('responds with 500 for malformed response body', async () => {
@@ -57,6 +55,6 @@ describe('FetchRoute', () => {
       params: respondWithBadTypeParams,
       request: thingRequest(respondWithBadTypeParams, goodThing),
     });
-    assert.strictEqual(response.status, 500);
+    expect(response.status).toEqual(500);
   });
 });
