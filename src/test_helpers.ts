@@ -1,15 +1,8 @@
-import { RouteConfig } from '@asteasolutions/zod-to-openapi';
+import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import {
-  FetchRoute,
-  Response404,
-  Response415,
-  Response422,
-  Response500,
-  toHttpError,
-  Validator,
-} from '.';
+import type { FetchRoute } from '.';
+import { Response404, Response415, Response422, Response500, toHttpError, Validator } from '.';
 
 // Define Zod schemas for the request parameters, query and body
 

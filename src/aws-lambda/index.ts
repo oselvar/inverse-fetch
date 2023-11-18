@@ -1,4 +1,4 @@
-import {
+import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2,
   APIGatewayProxyStructuredResultV2,
@@ -6,7 +6,7 @@ import {
 } from 'aws-lambda';
 export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-import { FetchRoute } from '../index';
+import type { FetchRoute } from '../index';
 
 export function toProxyHandler(fetchRoute: FetchRoute): ProxyHandler {
   return async (event) => {

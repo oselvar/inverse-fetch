@@ -96,6 +96,7 @@
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
+      "project": "tsconfig.json",
       "ecmaVersion": "latest",
       "sourceType": "module"
     },
@@ -105,7 +106,9 @@
     ],
     "rules": {
       "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error"
+      "simple-import-sort/exports": "error",
+      "@typescript-eslint/consistent-type-exports": "error",
+      "@typescript-eslint/consistent-type-imports": "error"
     },
     "plugins": [
       "simple-import-sort"
@@ -114,7 +117,7 @@
       "node": true
     },
     "ignorePatterns": [
-      "src/env.d.ts"
+      "dist"
     ]
   },
   "tsup": {

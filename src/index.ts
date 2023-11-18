@@ -1,5 +1,6 @@
 import type { ResponseConfig, RouteConfig } from '@asteasolutions/zod-to-openapi';
-import { type SafeParseReturnType, z, ZodType } from 'zod';
+import type { ZodType } from 'zod';
+import { type SafeParseReturnType, z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 export type FetchRouteContext<Params extends StringParams> = {
