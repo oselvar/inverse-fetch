@@ -12,7 +12,7 @@ It also provides adapters for non-Fetch based web servers/frameworks such as:
 * [Express](https://expressjs.com/) (coming soon)
 * [Fastify](https://www.fastify.io/) (coming soon)
 
-OpenAPI Routes is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi). Rather than writing OpenAPI specifications by hand, you write Zod schemas and then generate OpenAPI specifications from them.
+The library is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi).
 
 - [Installation](#installation)
 - [Define an OpenAPI route](#define-an-openapi-route)
