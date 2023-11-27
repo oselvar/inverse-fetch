@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+- Allow responses without a content type (for example redirects).
+
 ## [0.3.0] - 2023-11-17
 ### Added
 - Support for `application/x-www-form-urlencoded`

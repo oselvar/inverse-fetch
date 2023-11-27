@@ -131,14 +131,18 @@ export class Validator {
 
     const responseConfig = this.routeConfig.responses[status];
     if (!responseConfig) {
-      return errorResponse(`No response config for status ${status}`, 500);
-    }
-    if (!responseConfig.content) {
-      return errorResponse(`No response config content for status ${status}`, 500);
+      const statuses = Object.keys(this.routeConfig.responses).join(', ');
+      return errorResponse(
+        `No response config for status ${status}. Allowed statuses: ${statuses}`,
+        500,
+      );
     }
 
     const contentType = copy.headers.get('content-type');
     if (contentType === 'application/json') {
+      if (!responseConfig.content) {
+        return errorResponse(`No response config content for status ${status}`, 500);
+      }
       const schema = responseConfig.content[contentType].schema;
       try {
         const data = await copy.json();
@@ -147,8 +151,6 @@ export class Validator {
         const { response } = toHttpError(error);
         return response;
       }
-    } else {
-      return errorResponse(`Invalid content-type: ${contentType}`, 500);
     }
     return response;
   }
