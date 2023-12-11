@@ -16,7 +16,7 @@ import {
   respondWithBadTypeParams,
   thingRequest,
   thingRoute,
-} from '../test_helpers.js';
+} from '../test-app/app.js';
 import { toProxyHandler } from './index.js';
 
 const context = {} as Context;

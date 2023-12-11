@@ -1,27 +1,43 @@
-import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
+import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import type { FetchRoute } from '.';
-import { Response404, Response415, Response422, Response500, toHttpError, Validator } from '.';
+import type { FetchRoute } from '../index.js';
+import {
+  Response404,
+  Response415,
+  Response422,
+  Response500,
+  toHttpError,
+  Validator,
+} from '../index.js';
+import { registry } from './registry.js';
+
+extendZodWithOpenApi(z);
 
 // Define Zod schemas for the request parameters, query and body
 
-const ThingParamsSchema = z.object({
-  thingId: z.string().regex(/[\d]+/),
-});
+const ThingParamsSchema = z
+  .object({
+    thingId: z.string().regex(/[\d]+/),
+  })
+  .openapi({});
 
-const ThingQuerySchema = z.object({
-  thingId: z.string().regex(/[\d]+/).optional(),
-});
+const ThingQuerySchema = z
+  .object({
+    thingId: z.string().regex(/[\d]+/).optional(),
+  })
+  .openapi({});
 
-const ThingBodySchema = z.object({
-  name: z.string().regex(/[a-z]+/),
-  description: z.string().regex(/[a-z]+/),
-});
+const ThingBodySchema = z
+  .object({
+    name: z.string().regex(/[a-z]+/),
+    description: z.string().regex(/[a-z]+/),
+  })
+  .openapi({});
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
-const createThingRouteConfig: RouteConfig = {
+const routeConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -51,7 +67,9 @@ const createThingRouteConfig: RouteConfig = {
   },
 };
 
-const createThingValidator = new Validator(createThingRouteConfig);
+registry.registerPath(routeConfig);
+
+const createThingValidator = new Validator(routeConfig);
 
 type ThingBody = z.infer<typeof ThingBodySchema>;
 

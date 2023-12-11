@@ -8,7 +8,7 @@ import {
   respondWithBadTypeParams,
   thingRequest,
   thingRoute,
-} from './test_helpers';
+} from './test-app/app';
 
 describe('FetchRoute', () => {
   it('validates request and response', async () => {
