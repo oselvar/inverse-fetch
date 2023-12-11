@@ -86,11 +86,7 @@ export const Response500: ResponseConfig = {
 };
 
 export class Validator {
-  // public readonly Response: typeof Response;
-
-  constructor(private routeConfig: RouteConfig) {
-    // this.Response = makeResponse(routeConfig);
-  }
+  constructor(private routeConfig: RouteConfig) {}
 
   params<T extends TypedParams>(params: StringParams): T {
     const schema = this.routeConfig.request?.params;
