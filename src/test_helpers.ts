@@ -21,7 +21,7 @@ const ThingBodySchema = z.object({
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
-const routeConfig: RouteConfig = {
+const createThingRouteConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -51,7 +51,7 @@ const routeConfig: RouteConfig = {
   },
 };
 
-const validator = new Validator(routeConfig);
+const createThingValidator = new Validator(createThingRouteConfig);
 
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
@@ -80,12 +80,12 @@ export const respondWithBadTypeParams: ThingParams = {
 };
 
 const _thingRoute: FetchRoute = async (ctx) => {
-  const params = validator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
-  const body = await validator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
+  const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
+  const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
   if (params.thingId === respondWithBadTypeParams.thingId) {
-    return validator.validate(Response.json({ foo: 'bar' }));
+    return createThingValidator.validate(Response.json({ foo: 'bar' }));
   }
-  return validator.validate(Response.json(body));
+  return createThingValidator.validate(Response.json(body));
 };
 
 export const thingRoute: FetchRoute = async (ctx) => {
