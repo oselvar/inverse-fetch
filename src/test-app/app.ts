@@ -1,7 +1,7 @@
 import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import type { FetchWithParams } from '../index.js';
+import type { FetchHandler } from '../index.js';
 import { Response404, Response415, Response422, Response500, Validator } from '../index.js';
 import { registry } from './registry.js';
 
@@ -90,7 +90,7 @@ export const respondWithBadTypeParams: ThingParams = {
   thingId: '2',
 };
 
-export const thingHandler: FetchWithParams<ThingParams> = async (input, init) => {
+export const thingHandler: FetchHandler<ThingParams> = async (input, init) => {
   const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(init?.params);
   const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(input);
   if (params.thingId === respondWithBadTypeParams.thingId) {

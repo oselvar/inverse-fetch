@@ -8,18 +8,20 @@ export type FetchRouteContext<Params extends StringParams> = {
   request: Request;
 };
 
-export type FetchWithParams<Params extends StringParams = StringParams> = (
+/**
+ * An extension of the Fetch API that uses RequestInitWithParams.
+ */
+export type FetchHandler<Params extends StringParams = StringParams> = (
   input: RequestInfo | URL,
   init?: RequestInitWithParams<Params>,
 ) => Promise<Response>;
 
+/**
+ * An extension of the Fetch API's RequestInit that includes a params property.
+ */
 export type RequestInitWithParams<Params extends StringParams = StringParams> = RequestInit & {
   params?: Params;
 };
-
-export type FetchHandler<Params extends StringParams = StringParams> = (
-  context: FetchRouteContext<Params>,
-) => Promise<Response>;
 
 export type StringParams = Record<string, string | undefined>;
 
@@ -134,7 +136,7 @@ export class Validator {
 
   async body<T>(request: URL | RequestInfo): Promise<T> {
     if (typeof request === 'string') {
-      throw new Error('RequestInfo must be a Request, but got a string');
+      request = new Request(request);
     }
     if (request instanceof URL) {
       request = new Request(request);

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Changes `FetchHandler` to be compatible with the `fetch` API.
+### Fixed
+- Handle errors in the `aws-lambda` `Handler` created by `toProxyHandler`
+### Added
+- Support for Express via `addRoute`
+
 ## [0.3.1] - 2023-11-27
 ### Fixed
 - Allow responses without a content type (for example redirects).
