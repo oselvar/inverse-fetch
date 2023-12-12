@@ -8,6 +8,15 @@ export type FetchRouteContext<Params extends StringParams> = {
   request: Request;
 };
 
+export type FetchWithParams<Params extends StringParams = StringParams> = (
+  input: RequestInfo | URL,
+  init?: RequestInitWithParams<Params>,
+) => Promise<Response>;
+
+export type RequestInitWithParams<Params extends StringParams = StringParams> = RequestInit & {
+  params?: Params;
+};
+
 export type FetchHandler<Params extends StringParams = StringParams> = (
   context: FetchRouteContext<Params>,
 ) => Promise<Response>;
@@ -27,6 +36,30 @@ export class HttpError extends Error {
   }
 }
 
+export class HttpError404 extends HttpError {
+  constructor(message: string) {
+    super(message, 404);
+  }
+}
+
+export class HttpError415 extends HttpError {
+  constructor(message: string) {
+    super(message, 415);
+  }
+}
+
+export class HttpError422 extends HttpError {
+  constructor(message: string) {
+    super(message, 422);
+  }
+}
+
+export class HttpError500 extends HttpError {
+  constructor(message: string) {
+    super(message, 500);
+  }
+}
+
 export const ErrorSchema = z.object({
   message: z.string(),
 });
@@ -40,12 +73,11 @@ export function toHttpError(error: unknown): HttpError {
   if (error instanceof HttpError) {
     return error;
   } else if (error instanceof Error) {
-    const httpError = new HttpError(error.message, 500);
+    const httpError = new HttpError500(error.message);
     httpError.cause = error;
     return httpError;
   } else {
-    const message = 'Unknown error';
-    return new HttpError(message, 500);
+    return new HttpError500('Unknown error');
   }
 }
 
@@ -88,36 +120,42 @@ export const Response500: ResponseConfig = {
 export class Validator {
   constructor(private routeConfig: RouteConfig) {}
 
-  params<T extends TypedParams>(params: StringParams): T {
+  params<T extends TypedParams>(params: StringParams | undefined): T {
     const schema = this.routeConfig.request?.params;
-    return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', 404);
+    return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', HttpError404);
   }
 
   query<T extends TypedParams>(request: Request): T {
     const schema = this.routeConfig.request?.query;
     const url = new URL(request.url, 'http://dummy.com');
     const query = Object.fromEntries(url.searchParams.entries());
-    return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', 404);
+    return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', HttpError404);
   }
 
-  async body<T>(request: Request): Promise<T> {
+  async body<T>(request: URL | RequestInfo): Promise<T> {
+    if (typeof request === 'string') {
+      throw new Error('RequestInfo must be a Request, but got a string');
+    }
+    if (request instanceof URL) {
+      request = new Request(request);
+    }
     const contentType = request.headers.get('content-type');
     if (!contentType) {
       return null as T;
     }
     const schema = this.routeConfig.request?.body?.content[contentType]?.schema;
     if (!schema) {
-      throw new HttpError(`No schema for Content-Type: ${contentType}`, 415);
+      throw new HttpError415(`No schema for Content-Type: ${contentType}`);
     }
     if (contentType === 'application/json') {
       const body = await request.json();
-      return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, 422);
+      return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, HttpError422);
     } else if (contentType === 'application/x-www-form-urlencoded') {
       const body = await request.formData();
       const data = Object.fromEntries(body.entries());
-      return this.validateObject<T>(schema as ZodType<T>, data, `requestBody`, 422);
+      return this.validateObject<T>(schema as ZodType<T>, data, `requestBody`, HttpError422);
     }
-    throw new HttpError(`Unsupported Content-Type: ${contentType}`, 415);
+    throw new HttpError415(`Unsupported Content-Type: ${contentType}`);
   }
 
   async validate(response: Response): Promise<Response> {
@@ -142,7 +180,7 @@ export class Validator {
       const schema = responseConfig.content[contentType].schema;
       try {
         const data = await copy.json();
-        this.validateObject(schema as ZodType<unknown>, data, 'responseBody', 500);
+        this.validateObject(schema as ZodType<unknown>, data, 'responseBody', HttpError500);
       } catch (error) {
         const { response } = toHttpError(error);
         return response;
@@ -155,7 +193,7 @@ export class Validator {
     schema: ZodType<T>,
     value: unknown,
     type: ObjectType,
-    errorStatus: number,
+    errorClass: new (message: string) => HttpError,
   ): T {
     if (schema === undefined) {
       throw new HttpError(`No ${type} schema`, 500);
@@ -167,7 +205,7 @@ export class Validator {
     const valueJson = JSON.stringify(value, null, 2);
     const schemaJson = JSON.stringify(zodToJsonSchema(schema), null, 2);
     const errorMessage = `Error validating ${type}: ${valueJson}\n\nSchema: ${schemaJson}`;
-    throw new HttpError(errorMessage, errorStatus);
+    throw new errorClass(errorMessage);
   }
 }
 

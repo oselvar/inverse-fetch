@@ -1,15 +1,8 @@
 import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import type { FetchHandler } from '../index.js';
-import {
-  Response404,
-  Response415,
-  Response422,
-  Response500,
-  toHttpError,
-  Validator,
-} from '../index.js';
+import type { FetchWithParams } from '../index.js';
+import { Response404, Response415, Response422, Response500, Validator } from '../index.js';
 import { registry } from './registry.js';
 
 extendZodWithOpenApi(z);
@@ -97,25 +90,34 @@ export const respondWithBadTypeParams: ThingParams = {
   thingId: '2',
 };
 
-const _thingHandler: FetchHandler = async (ctx) => {
-  const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
-  const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
+export const thingHandler: FetchWithParams<ThingParams> = async (input, init) => {
+  const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(init?.params);
+  const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(input);
   if (params.thingId === respondWithBadTypeParams.thingId) {
     return createThingValidator.validate(Response.json({ foo: 'bar' }));
   }
   return createThingValidator.validate(Response.json(body));
 };
 
-// TODO: Remove tis try/catch - users shouldn't have to do this.
-// It should be handled by the web server
-export const thingHandler: FetchHandler = async (ctx) => {
-  try {
-    return await _thingHandler(ctx);
-  } catch (error) {
-    const { response } = toHttpError(error);
-    return response;
-  }
-};
+// const _thingHandler: FetchHandler = async (ctx) => {
+//   const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
+//   const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
+//   if (params.thingId === respondWithBadTypeParams.thingId) {
+//     return createThingValidator.validate(Response.json({ foo: 'bar' }));
+//   }
+//   return createThingValidator.validate(Response.json(body));
+// };
+
+// // TODO: Remove tis try/catch - users shouldn't have to do this.
+// // It should be handled by the web server
+// export const thingHandler: FetchHandler = async (ctx) => {
+//   try {
+//     return await _thingHandler(ctx);
+//   } catch (error) {
+//     const { response } = toHttpError(error);
+//     return response;
+//   }
+// };
 
 export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {
   return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {

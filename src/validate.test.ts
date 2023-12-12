@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { HttpError404, HttpError415 } from './index.js';
 import {
   badParams,
   badThing,
@@ -12,48 +13,49 @@ import {
 
 describe('FetchRoute', () => {
   it('validates request and response', async () => {
-    const response = await thingHandler({
+    const response = await thingHandler(thingRequest(goodParams, goodThing), {
       params: goodParams,
-      request: thingRequest(goodParams, goodThing),
     });
     const responseBody = await response.json();
     expect(responseBody).toEqual(goodThing);
   });
 
-  it('responds with 404 for malformed path params', async () => {
-    const response = await thingHandler({
-      params: badParams,
-      request: thingRequest(badParams, goodThing),
-    });
-    expect(response.status).toEqual(404);
-  });
-
-  it('responds with 415 for unsupported media type', async () => {
-    const response = await thingHandler({
-      params: goodParams,
-      request: new Request(`http://host.com/things/${encodeURIComponent(goodParams.thingId)}`, {
-        method: 'post',
-        headers: {
-          'content-type': 'text/csv',
-        },
-        body: `foo,bar,baz\n1,2,3`,
+  it('throws 404 error for malformed path params', async () => {
+    expect(
+      thingHandler(thingRequest(badParams, goodThing), {
+        params: badParams,
       }),
-    });
-    expect(response.status).toEqual(415);
+    ).rejects.toThrowError(HttpError404);
   });
 
-  it('responds with 422 for malformed request body', async () => {
-    const response = await thingHandler({
-      params: goodParams,
-      request: thingRequest(goodParams, badThing),
-    });
-    expect(response.status).toEqual(422);
+  it('throws 415 error for unsupported media type', async () => {
+    expect(
+      thingHandler(
+        new Request(`http://host.com/things/${encodeURIComponent(goodParams.thingId)}`, {
+          method: 'post',
+          headers: {
+            'content-type': 'text/csv',
+          },
+          body: `foo,bar,baz\n1,2,3`,
+        }),
+        {
+          params: goodParams,
+        },
+      ),
+    ).rejects.toThrowError(HttpError415);
+  });
+
+  it('throws 422 error for malformed request body', async () => {
+    expect(
+      thingHandler(thingRequest(goodParams, badThing), {
+        params: goodParams,
+      }),
+    ).rejects.toThrowError(/Error validating requestBody/);
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const response = await thingHandler({
+    const response = await thingHandler(thingRequest(respondWithBadTypeParams, goodThing), {
       params: respondWithBadTypeParams,
-      request: thingRequest(respondWithBadTypeParams, goodThing),
     });
     expect(response.status).toEqual(500);
   });

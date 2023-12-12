@@ -3,12 +3,12 @@ import { Readable } from 'node:stream';
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import type { FetchHandler } from '../index.js';
+import { type FetchWithParams, type StringParams, toHttpError } from '../index.js';
 
-export function addRoute(
+export function addRoute<Params extends StringParams = StringParams>(
   expressRouter: IRouter,
   route: RouteConfig,
-  fetchHandler: FetchHandler,
+  fetchHandler: FetchWithParams<Params>,
   port: number,
 ) {
   const path = route.path.replace(/{([^}]+)}/g, ':$1');
@@ -38,28 +38,29 @@ export function addRoute(
     };
     const request = new Request(url, requestInit);
 
-    fetchHandler({
-      params: req.params,
-      request,
+    function writeResponse(response: Response) {
+      res.status(response.status);
+      response.headers.forEach((value, key) => {
+        res.setHeader(key, value);
+      });
+      const body = response.body;
+      if (body) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const writable = Readable.fromWeb(body);
+        writable.pipe(res);
+      } else {
+        res.end();
+      }
+    }
+
+    fetchHandler(request, {
+      params: req.params as Params,
     })
-      .then((response) => {
-        res.status(response.status);
-        response.headers.forEach((value, key) => {
-          res.setHeader(key, value);
-        });
-        const body = response.body;
-        if (body) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const writable = Readable.fromWeb(body);
-          writable.pipe(res);
-        } else {
-          res.end();
-        }
-      })
+      .then(writeResponse)
       .catch((error) => {
-        console.error(error);
-        res.status(503);
+        const httpError = toHttpError(error);
+        writeResponse(httpError.response);
       });
   });
 }

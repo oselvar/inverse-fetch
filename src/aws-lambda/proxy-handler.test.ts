@@ -1,3 +1,5 @@
+import assert from 'node:assert';
+
 import type {
   APIGatewayEventRequestContextV2,
   APIGatewayProxyEventV2,
@@ -26,8 +28,9 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
 
 describe('proxyHandler', () => {
   it('validates request and response', async () => {
-    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
+
+    const proxyHandler = toProxyHandler(thingHandler);
     const result = (await proxyHandler(
       event,
       context,
@@ -37,38 +40,35 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(badParams, goodThing), badParams);
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+
+    const proxyHandler = toProxyHandler(thingHandler);
+    const result = await proxyHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(404);
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+
+    const proxyHandler = toProxyHandler(thingHandler);
+    const result = await proxyHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(422);
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(
       thingRequest(respondWithBadTypeParams, goodThing),
       respondWithBadTypeParams,
     );
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+
+    const proxyHandler = toProxyHandler(thingHandler);
+    const result = await proxyHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(500);
   });
 });

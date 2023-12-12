@@ -6,14 +6,21 @@ import type {
 } from 'aws-lambda';
 export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-import type { FetchHandler } from '../index';
+import { type FetchWithParams, type StringParams, toHttpError } from '../index';
 
-export function toProxyHandler(fetchHandler: FetchHandler): ProxyHandler {
+export function toProxyHandler<Params extends StringParams = StringParams>(
+  fetchHandler: FetchWithParams<Params>,
+): ProxyHandler {
   return async (event) => {
-    const params = event.pathParameters || {};
-    const request = toRequest(event);
-    const response = await fetchHandler({ params, request });
-    return toResult(response);
+    const params = (event.pathParameters || {}) as Params;
+    try {
+      const request = toRequest(event);
+      const response = await fetchHandler(request, { params });
+      return toResult(response);
+    } catch (error) {
+      const httpError = toHttpError(error);
+      return toResult(httpError.response);
+    }
   };
 }
 
