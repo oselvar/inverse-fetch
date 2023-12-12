@@ -106,6 +106,8 @@ const _thingRoute: FetchRoute = async (ctx) => {
   return createThingValidator.validate(Response.json(body));
 };
 
+// TODO: Remove tis try/catch - users shouldn't have to do this.
+// It should be handled by the web server
 export const thingRoute: FetchRoute = async (ctx) => {
   try {
     return await _thingRoute(ctx);

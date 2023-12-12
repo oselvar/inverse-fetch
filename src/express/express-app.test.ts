@@ -3,7 +3,13 @@ import type { Server } from 'http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Api, HttpClient } from '../test-app/ApiClient.js';
-import { routeConfig, thingRoute } from '../test-app/app.js';
+import {
+  badParams,
+  goodParams,
+  respondWithBadTypeParams,
+  routeConfig,
+  thingRoute,
+} from '../test-app/app.js';
 import { addRoute } from './index.js';
 
 describe('expressApp', () => {
@@ -26,11 +32,29 @@ describe('expressApp', () => {
   });
 
   it('makes a successful request', async () => {
-    const res = await api.things.thingsCreate(
-      { thingId: '1' },
-      { name: 'mything', description: 'besthingever' },
-    );
+    const res = await api.things.thingsCreate(goodParams, {
+      name: 'mything',
+      description: 'besthingever',
+    });
     expect(res.status).toEqual(200);
     expect(res.data).toEqual({ name: 'mything', description: 'besthingever' });
+  });
+
+  it('makes a 404 request', async () => {
+    const res = await api.things.thingsCreate(badParams, {
+      name: 'mything',
+      description: 'besthingever',
+    });
+    expect(res.status).toEqual(404);
+    expect(res.data).toEqual(null);
+  });
+
+  it('makes a 500 request', async () => {
+    const res = await api.things.thingsCreate(respondWithBadTypeParams, {
+      name: 'mything',
+      description: 'besthingever',
+    });
+    expect(res.status).toEqual(500);
+    expect(res.data).toEqual(null);
   });
 });
