@@ -29,8 +29,7 @@ function toRequest(event: APIGatewayProxyEventV2): Request {
     headers: new Headers(event.headers as Record<string, string>),
     body: event.body,
   };
-  const request = new Request(url, requestInit);
-  return request;
+  return new Request(url, requestInit);
 }
 
 /**

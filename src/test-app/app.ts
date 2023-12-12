@@ -37,7 +37,7 @@ const ThingBodySchema = z
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
-const routeConfig: RouteConfig = {
+export const routeConfig: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -75,7 +75,7 @@ type ThingBody = z.infer<typeof ThingBodySchema>;
 
 export const goodThing: ThingBody = {
   name: 'mything',
-  description: 'bestghingever',
+  description: 'besthingever',
 };
 
 export const badThing: ThingBody = {
