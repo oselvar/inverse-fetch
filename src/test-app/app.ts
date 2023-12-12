@@ -60,11 +60,22 @@ export const routeConfig: RouteConfig = {
   },
 };
 
+// Add the route to the global registry - used to write the OpenAPI spec for the whole app
 registry.registerPath(routeConfig);
 
-const createThingValidator = new Validator(routeConfig);
+const validator = new Validator(routeConfig);
 
+type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
+
+export const thingHandler: FetchHandler = async (input, init) => {
+  const params = validator.params<ThingParams>(init?.params);
+  const body = await validator.body<ThingBody>(input);
+  if (params.thingId === respondWithBadTypeParams.thingId) {
+    return validator.validate(Response.json({ foo: 'bar' }));
+  }
+  return validator.validate(Response.json(body));
+};
 
 export const goodThing: ThingBody = {
   name: 'mything',
@@ -75,8 +86,6 @@ export const badThing: ThingBody = {
   name: 'MYTHING',
   description: 'WORSTTHINGEVER',
 };
-
-type ThingParams = z.infer<typeof ThingParamsSchema>;
 
 export const goodParams: ThingParams = {
   thingId: '1',
@@ -89,35 +98,6 @@ export const badParams: ThingParams = {
 export const respondWithBadTypeParams: ThingParams = {
   thingId: '2',
 };
-
-export const thingHandler: FetchHandler<ThingParams> = async (input, init) => {
-  const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(init?.params);
-  const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(input);
-  if (params.thingId === respondWithBadTypeParams.thingId) {
-    return createThingValidator.validate(Response.json({ foo: 'bar' }));
-  }
-  return createThingValidator.validate(Response.json(body));
-};
-
-// const _thingHandler: FetchHandler = async (ctx) => {
-//   const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
-//   const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
-//   if (params.thingId === respondWithBadTypeParams.thingId) {
-//     return createThingValidator.validate(Response.json({ foo: 'bar' }));
-//   }
-//   return createThingValidator.validate(Response.json(body));
-// };
-
-// // TODO: Remove tis try/catch - users shouldn't have to do this.
-// // It should be handled by the web server
-// export const thingHandler: FetchHandler = async (ctx) => {
-//   try {
-//     return await _thingHandler(ctx);
-//   } catch (error) {
-//     const { response } = toHttpError(error);
-//     return response;
-//   }
-// };
 
 export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {
   return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {

@@ -8,11 +8,9 @@ export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResult
 
 import { type FetchHandler, type StringParams, toHttpError } from '../index';
 
-export function toProxyHandler<Params extends StringParams = StringParams>(
-  fetchHandler: FetchHandler<Params>,
-): ProxyHandler {
+export function toProxyHandler(fetchHandler: FetchHandler): ProxyHandler {
   return async (event) => {
-    const params = (event.pathParameters || {}) as Params;
+    const params = (event.pathParameters || {}) as StringParams;
     try {
       const request = toRequest(event);
       const response = await fetchHandler(request, { params });

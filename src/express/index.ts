@@ -5,10 +5,10 @@ import type { IRouter } from 'express';
 
 import { type FetchHandler, type StringParams, toHttpError } from '../index.js';
 
-export function addRoute<Params extends StringParams = StringParams>(
+export function addRoute(
   expressRouter: IRouter,
   route: RouteConfig,
-  fetchHandler: FetchHandler<Params>,
+  fetchHandler: FetchHandler,
   port: number,
 ) {
   const path = route.path.replace(/{([^}]+)}/g, ':$1');
@@ -55,7 +55,7 @@ export function addRoute<Params extends StringParams = StringParams>(
     }
 
     fetchHandler(request, {
-      params: req.params as Params,
+      params: req.params as StringParams,
     })
       .then(writeResponse)
       .catch((error) => {

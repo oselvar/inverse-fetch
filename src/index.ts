@@ -11,16 +11,16 @@ export type FetchRouteContext<Params extends StringParams> = {
 /**
  * An extension of the Fetch API that uses RequestInitWithParams.
  */
-export type FetchHandler<Params extends StringParams = StringParams> = (
+export type FetchHandler = (
   input: RequestInfo | URL,
-  init?: RequestInitWithParams<Params>,
+  init?: RequestInitWithParams,
 ) => Promise<Response>;
 
 /**
  * An extension of the Fetch API's RequestInit that includes a params property.
  */
-export type RequestInitWithParams<Params extends StringParams = StringParams> = RequestInit & {
-  params?: Params;
+export type RequestInitWithParams = RequestInit & {
+  params?: StringParams;
 };
 
 export type StringParams = Record<string, string | undefined>;
