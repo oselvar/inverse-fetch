@@ -10,30 +10,27 @@ describe('expressApp', () => {
   const port = 3000;
   let app: express.Express;
   let server: Server;
+  let api: Api<unknown>;
 
   beforeEach(() => {
     app = express();
-
-    const route = routeConfig;
-    const handler = thingRoute;
-    addRoute(app, route, handler, port);
-
+    addRoute(app, routeConfig, thingRoute, port);
     server = app.listen(port);
+
+    const httpClient = new HttpClient();
+    api = new Api(httpClient);
   });
 
   afterEach(() => {
     server.close();
   });
 
-  it('does something', async () => {
-    const httpClient = new HttpClient();
-    const api = new Api(httpClient);
+  it('makes a successful request', async () => {
     const res = await api.things.thingsCreate(
       { thingId: '1' },
       { name: 'mything', description: 'besthingever' },
     );
     expect(res.status).toEqual(200);
-    const body = res.data;
-    expect(body).toEqual({ name: 'mything', description: 'besthingever' });
+    expect(res.data).toEqual({ name: 'mything', description: 'besthingever' });
   });
 });
