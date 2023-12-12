@@ -6,14 +6,14 @@ import type { IRouter } from 'express';
 import type { FetchRoute } from '../index.js';
 
 export function addRoute(
-  expressRoutes: IRouter,
+  expressRouter: IRouter,
   route: RouteConfig,
   handler: FetchRoute,
   port: number,
 ) {
   const path = route.path.replace(/{([^}]+)}/g, ':$1');
 
-  expressRoutes.post(path, (req, res) => {
+  expressRouter[route.method](path, (req, res) => {
     const url = new URL(req.url, `${req.protocol}://${req.hostname}:${port}`);
     if (typeof req.query === 'string') {
       url.search = req.query;
