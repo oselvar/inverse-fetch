@@ -8,7 +8,7 @@ import {
   goodParams,
   respondWithBadTypeParams,
   routeConfig,
-  thingRoute,
+  thingHandler,
 } from '../test-app/app.js';
 import { addRoute } from './index.js';
 
@@ -20,7 +20,7 @@ describe('expressApp', () => {
 
   beforeEach(() => {
     app = express();
-    addRoute(app, routeConfig, thingRoute, port);
+    addRoute(app, routeConfig, thingHandler, port);
     server = app.listen(port);
 
     const httpClient = new HttpClient();

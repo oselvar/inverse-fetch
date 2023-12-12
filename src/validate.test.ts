@@ -6,13 +6,13 @@ import {
   goodParams,
   goodThing,
   respondWithBadTypeParams,
+  thingHandler,
   thingRequest,
-  thingRoute,
 } from './test-app/app';
 
 describe('FetchRoute', () => {
   it('validates request and response', async () => {
-    const response = await thingRoute({
+    const response = await thingHandler({
       params: goodParams,
       request: thingRequest(goodParams, goodThing),
     });
@@ -21,7 +21,7 @@ describe('FetchRoute', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const response = await thingRoute({
+    const response = await thingHandler({
       params: badParams,
       request: thingRequest(badParams, goodThing),
     });
@@ -29,7 +29,7 @@ describe('FetchRoute', () => {
   });
 
   it('responds with 415 for unsupported media type', async () => {
-    const response = await thingRoute({
+    const response = await thingHandler({
       params: goodParams,
       request: new Request(`http://host.com/things/${encodeURIComponent(goodParams.thingId)}`, {
         method: 'post',
@@ -43,7 +43,7 @@ describe('FetchRoute', () => {
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const response = await thingRoute({
+    const response = await thingHandler({
       params: goodParams,
       request: thingRequest(goodParams, badThing),
     });
@@ -51,7 +51,7 @@ describe('FetchRoute', () => {
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const response = await thingRoute({
+    const response = await thingHandler({
       params: respondWithBadTypeParams,
       request: thingRequest(respondWithBadTypeParams, goodThing),
     });

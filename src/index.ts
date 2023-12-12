@@ -8,7 +8,7 @@ export type FetchRouteContext<Params extends StringParams> = {
   request: Request;
 };
 
-export type FetchRoute<Params extends StringParams = StringParams> = (
+export type FetchHandler<Params extends StringParams = StringParams> = (
   context: FetchRouteContext<Params>,
 ) => Promise<Response>;
 

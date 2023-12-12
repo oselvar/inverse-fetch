@@ -1,7 +1,7 @@
 import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import type { FetchRoute } from '../index.js';
+import type { FetchHandler } from '../index.js';
 import {
   Response404,
   Response415,
@@ -97,7 +97,7 @@ export const respondWithBadTypeParams: ThingParams = {
   thingId: '2',
 };
 
-const _thingRoute: FetchRoute = async (ctx) => {
+const _thingHandler: FetchHandler = async (ctx) => {
   const params = createThingValidator.params<z.infer<typeof ThingParamsSchema>>(ctx.params);
   const body = await createThingValidator.body<z.infer<typeof ThingBodySchema>>(ctx.request);
   if (params.thingId === respondWithBadTypeParams.thingId) {
@@ -108,9 +108,9 @@ const _thingRoute: FetchRoute = async (ctx) => {
 
 // TODO: Remove tis try/catch - users shouldn't have to do this.
 // It should be handled by the web server
-export const thingRoute: FetchRoute = async (ctx) => {
+export const thingHandler: FetchHandler = async (ctx) => {
   try {
-    return await _thingRoute(ctx);
+    return await _thingHandler(ctx);
   } catch (error) {
     const { response } = toHttpError(error);
     return response;

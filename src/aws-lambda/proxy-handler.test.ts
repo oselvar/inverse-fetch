@@ -14,8 +14,8 @@ import {
   goodParams,
   goodThing,
   respondWithBadTypeParams,
+  thingHandler,
   thingRequest,
-  thingRoute,
 } from '../test-app/app.js';
 import { toProxyHandler } from './index.js';
 
@@ -26,7 +26,7 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
 
 describe('proxyHandler', () => {
   it('validates request and response', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
+    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
     const result = (await proxyHandler(
       event,
@@ -37,7 +37,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
+    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(badParams, goodThing), badParams);
     const result = (await proxyHandler(
       event,
@@ -48,7 +48,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
+    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
     const result = (await proxyHandler(
       event,
@@ -59,7 +59,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
+    const proxyHandler = toProxyHandler(thingHandler);
     const event = await toEvent(
       thingRequest(respondWithBadTypeParams, goodThing),
       respondWithBadTypeParams,

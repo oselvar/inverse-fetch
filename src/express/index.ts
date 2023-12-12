@@ -3,12 +3,12 @@ import { Readable } from 'node:stream';
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import type { FetchRoute } from '../index.js';
+import type { FetchHandler } from '../index.js';
 
 export function addRoute(
   expressRouter: IRouter,
   route: RouteConfig,
-  handler: FetchRoute,
+  fetchHandler: FetchHandler,
   port: number,
 ) {
   const path = route.path.replace(/{([^}]+)}/g, ':$1');
@@ -38,7 +38,7 @@ export function addRoute(
     };
     const request = new Request(url, requestInit);
 
-    handler({
+    fetchHandler({
       params: req.params,
       request,
     })
