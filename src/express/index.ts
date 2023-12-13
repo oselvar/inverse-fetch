@@ -4,7 +4,8 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import { type FetchHandler, toHttpError } from '../index.js';
+import type { FetchHandler } from '../index.js';
+import { toHttpError } from '../index.js';
 
 export function addRoute(
   expressRouter: IRouter,

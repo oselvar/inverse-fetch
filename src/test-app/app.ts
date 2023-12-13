@@ -2,7 +2,7 @@ import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-o
 import { z } from 'zod';
 
 import type { FetchHandler } from '../index.js';
-import { Response404, Response415, Response422, Response500, Validator } from '../index.js';
+import { Response404, Response415, Response422, Response500, Validator } from '../openapi/index.js';
 import { registry } from './registry.js';
 
 extendZodWithOpenApi(z);

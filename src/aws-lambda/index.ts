@@ -6,7 +6,8 @@ import type {
 } from 'aws-lambda';
 export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-import { type FetchHandler, toHttpError } from '../index';
+import { toHttpError } from '../index';
+import type { FetchHandler } from '../index.js';
 
 export function toProxyHandler(fetchHandler: FetchHandler): ProxyHandler {
   return async (event) => {
