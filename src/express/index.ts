@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
@@ -25,14 +26,12 @@ export function addRoute(
       });
     }
 
-    const stream = Readable.toWeb(req);
-
     const requestInit: RequestInit = {
       method: req.method,
       headers: new Headers(req.headers as Record<string, string>),
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      body: stream,
+      body: Readable.toWeb(req),
       // https://github.com/nodejs/node/issues/46221#issuecomment-1426707013
       duplex: 'half',
     };
@@ -43,12 +42,8 @@ export function addRoute(
       response.headers.forEach((value, key) => {
         res.setHeader(key, value);
       });
-      const body = response.body;
-      if (body) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const writable = Readable.fromWeb(body);
-        writable.pipe(res);
+      if (response.body) {
+        Readable.fromWeb(response.body as NodeReadableStream).pipe(res);
       } else {
         res.end();
       }
