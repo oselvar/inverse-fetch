@@ -4,16 +4,31 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Handler,
 } from 'aws-lambda';
-export type ProxyHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
+export type AwsLambdaHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-import type { FetchRoute } from '../index';
+import type { FetchHandler, ToErrorResponse } from '../index.js';
+import { toHttpError, toJsonEerrorResponse } from '../index.js';
 
-export function toProxyHandler(fetchRoute: FetchRoute): ProxyHandler {
+export type ToAwsLambdaHandler = {
+  handler: FetchHandler;
+  toErrorResponse?: ToErrorResponse;
+};
+
+/**
+ * Create an AWS Lambda handler from a [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) handler
+ */
+export function toAwsLambdaHandler(params: ToAwsLambdaHandler): AwsLambdaHandler {
+  const { handler, toErrorResponse = toJsonEerrorResponse } = params;
   return async (event) => {
-    const params = event.pathParameters || {};
-    const request = toRequest(event);
-    const response = await fetchRoute({ params, request });
-    return toResult(response);
+    try {
+      const request = toRequest(event);
+      const response = await handler(request);
+      return toResult(response);
+    } catch (error) {
+      const httpError = toHttpError(error);
+      const response = toErrorResponse(httpError);
+      return toResult(response);
+    }
   };
 }
 
@@ -21,7 +36,8 @@ export function toProxyHandler(fetchRoute: FetchRoute): ProxyHandler {
  * Convert an APIGatewayProxyEventV2 to a [Fetch API Request](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 function toRequest(event: APIGatewayProxyEventV2): Request {
-  const url = new URL(event.rawPath, `https://${event.requestContext.domainName}`);
+  const protocol = event.headers['X-Forwarded-Proto'] || 'https';
+  const url = new URL(event.rawPath, `${protocol}://${event.requestContext.domainName}`);
   url.search = event.rawQueryString;
 
   const requestInit: RequestInit = {
@@ -29,8 +45,7 @@ function toRequest(event: APIGatewayProxyEventV2): Request {
     headers: new Headers(event.headers as Record<string, string>),
     body: event.body,
   };
-  const request = new Request(url, requestInit);
-  return request;
+  return new Request(url, requestInit);
 }
 
 /**

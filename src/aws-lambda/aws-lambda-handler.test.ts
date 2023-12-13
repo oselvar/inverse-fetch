@@ -1,3 +1,5 @@
+import assert from 'node:assert';
+
 import type {
   APIGatewayEventRequestContextV2,
   APIGatewayProxyEventV2,
@@ -13,11 +15,11 @@ import {
   badThing,
   goodParams,
   goodThing,
+  handler,
   respondWithBadTypeParams,
   thingRequest,
-  thingRoute,
-} from '../test_helpers.js';
-import { toProxyHandler } from './index.js';
+} from '../test-app/app.js';
+import { toAwsLambdaHandler } from './index.js';
 
 const context = {} as Context;
 const callback: Callback<APIGatewayProxyResultV2> = () => {
@@ -26,9 +28,10 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
 
 describe('proxyHandler', () => {
   it('validates request and response', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
-    const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
-    const result = (await proxyHandler(
+    const event = await toEvent(thingRequest(goodParams, goodThing));
+
+    const awsLambdaHandler = toAwsLambdaHandler({ handler });
+    const result = (await awsLambdaHandler(
       event,
       context,
       callback,
@@ -37,50 +40,40 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
-    const event = await toEvent(thingRequest(badParams, goodThing), badParams);
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+    const event = await toEvent(thingRequest(badParams, goodThing));
+
+    const awsLambdaHandler = toAwsLambdaHandler({ handler });
+    const result = await awsLambdaHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(404);
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
-    const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+    const event = await toEvent(thingRequest(goodParams, badThing));
+
+    const proxyHandler = toAwsLambdaHandler({ handler });
+    const result = await proxyHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(422);
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const proxyHandler = toProxyHandler(thingRoute);
-    const event = await toEvent(
-      thingRequest(respondWithBadTypeParams, goodThing),
-      respondWithBadTypeParams,
-    );
-    const result = (await proxyHandler(
-      event,
-      context,
-      callback,
-    )) as APIGatewayProxyStructuredResultV2;
+    const event = await toEvent(thingRequest(respondWithBadTypeParams, goodThing));
+
+    const proxyHandler = toAwsLambdaHandler({ handler });
+    const result = await proxyHandler(event, context, callback);
+    assert(result);
+    assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(500);
   });
 });
 
-async function toEvent(
-  request: Request,
-  params: Record<string, string>,
-): Promise<APIGatewayProxyEventV2> {
+async function toEvent(request: Request): Promise<APIGatewayProxyEventV2> {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   const url = new URL(request.url);
   const event: Partial<APIGatewayProxyEventV2> = {
-    pathParameters: params,
     rawPath: url.pathname,
     rawQueryString: url.searchParams.toString(),
     headers: Object.fromEntries(request.headers.entries()),
