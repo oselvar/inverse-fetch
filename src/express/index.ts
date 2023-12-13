@@ -4,18 +4,22 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import type { FetchHandler } from '../index.js';
-import { toHttpError } from '../index.js';
+import type { FetchHandler, ToErrorResponse } from '../index.js';
+import { toHttpError, toJsonEerrorResponse } from '../index.js';
 
-export function addRoute(
-  expressRouter: IRouter,
-  route: RouteConfig,
-  fetchHandler: FetchHandler,
-  port: number,
-) {
+export type AddRouteParams = {
+  router: IRouter;
+  route: RouteConfig;
+  handler: FetchHandler;
+  toErrorResponse?: ToErrorResponse;
+  port: number;
+};
+
+export function addRoute(params: AddRouteParams) {
+  const { router, route, handler, toErrorResponse = toJsonEerrorResponse, port } = params;
   const path = route.path.replace(/{([^}]+)}/g, ':$1');
 
-  expressRouter[route.method](path, (req, res) => {
+  router[route.method](path, (req, res) => {
     const url = new URL(req.url, `${req.protocol}://${req.hostname}:${port}`);
     if (typeof req.query === 'string') {
       url.search = req.query;
@@ -50,11 +54,12 @@ export function addRoute(
       }
     }
 
-    fetchHandler(request)
+    handler(request)
       .then(writeResponse)
       .catch((error) => {
         const httpError = toHttpError(error);
-        writeResponse(httpError.response);
+        const response = toErrorResponse(httpError);
+        writeResponse(response);
       });
   });
 }

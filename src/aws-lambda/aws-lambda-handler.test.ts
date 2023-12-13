@@ -15,11 +15,11 @@ import {
   badThing,
   goodParams,
   goodThing,
+  handler,
   respondWithBadTypeParams,
-  thingHandler,
   thingRequest,
 } from '../test-app/app.js';
-import { toProxyHandler } from './index.js';
+import { toAwsLambdaHandler } from './index.js';
 
 const context = {} as Context;
 const callback: Callback<APIGatewayProxyResultV2> = () => {
@@ -30,8 +30,8 @@ describe('proxyHandler', () => {
   it('validates request and response', async () => {
     const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
 
-    const proxyHandler = toProxyHandler(thingHandler);
-    const result = (await proxyHandler(
+    const awsLambdaHandler = toAwsLambdaHandler({ handler });
+    const result = (await awsLambdaHandler(
       event,
       context,
       callback,
@@ -42,8 +42,8 @@ describe('proxyHandler', () => {
   it('responds with 404 for malformed path params', async () => {
     const event = await toEvent(thingRequest(badParams, goodThing), badParams);
 
-    const proxyHandler = toProxyHandler(thingHandler);
-    const result = await proxyHandler(event, context, callback);
+    const awsLambdaHandler = toAwsLambdaHandler({ handler });
+    const result = await awsLambdaHandler(event, context, callback);
     assert(result);
     assert(typeof result !== 'string');
     expect(result.statusCode).toEqual(404);
@@ -52,7 +52,7 @@ describe('proxyHandler', () => {
   it('responds with 422 for malformed request body', async () => {
     const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
 
-    const proxyHandler = toProxyHandler(thingHandler);
+    const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
     assert(result);
     assert(typeof result !== 'string');
@@ -65,7 +65,7 @@ describe('proxyHandler', () => {
       respondWithBadTypeParams,
     );
 
-    const proxyHandler = toProxyHandler(thingHandler);
+    const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
     assert(result);
     assert(typeof result !== 'string');

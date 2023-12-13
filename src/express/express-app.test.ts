@@ -6,9 +6,9 @@ import { Api, HttpClient } from '../test-app/ApiClient.js';
 import {
   badParams,
   goodParams,
+  handler,
   respondWithBadTypeParams,
-  routeConfig,
-  thingHandler,
+  route,
 } from '../test-app/app.js';
 import { addRoute } from './index.js';
 
@@ -20,7 +20,8 @@ describe('expressApp', () => {
 
   beforeEach(() => {
     app = express();
-    addRoute(app, routeConfig, thingHandler, port);
+    addRoute({ router: app, route, handler, port });
+
     server = app.listen(port);
 
     const httpClient = new HttpClient();

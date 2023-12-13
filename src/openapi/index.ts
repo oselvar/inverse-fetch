@@ -4,7 +4,6 @@ import { type SafeParseReturnType, z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import {
-  errorResponse,
   HttpError,
   HttpError404,
   HttpError415,
@@ -106,24 +105,22 @@ export class Validator {
     const responseConfig = this.routeConfig.responses[status];
     if (!responseConfig) {
       const statuses = Object.keys(this.routeConfig.responses).join(', ');
-      return errorResponse(
+      throw new HttpError500(
         `No response config for status ${status}. Allowed statuses: ${statuses}`,
-        500,
       );
     }
 
     const contentType = copy.headers.get('content-type');
     if (contentType === 'application/json') {
       if (!responseConfig.content) {
-        return errorResponse(`No response config content for status ${status}`, 500);
+        throw new HttpError500(`No response config content for status ${status}`);
       }
       const schema = responseConfig.content[contentType].schema;
       try {
         const data = await copy.json();
         this.validateObject(schema as ZodType<unknown>, data, 'responseBody', HttpError500);
       } catch (error) {
-        const { response } = toHttpError(error);
-        return response;
+        throw toHttpError(error);
       }
     }
     return response;

@@ -1,11 +1,14 @@
 export type FetchHandler = typeof fetch;
 
 export class HttpError extends Error {
-  public readonly response: Response;
+  // public readonly response: Response;
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
     super(message);
-    this.response = errorResponse(message, status);
+    // this.response = errorResponse(message, status);
   }
 }
 
@@ -33,15 +36,18 @@ export class HttpError500 extends HttpError {
   }
 }
 
+export type ToErrorResponse = (error: HttpError) => Response;
+
 /**
  * Creates a Response with a { message } response body.
  * @param message the error message
  * @param status the HTTP status code
  * @returns a Response
  */
-export function errorResponse(message: string, status: number): Response {
+export const toJsonEerrorResponse: ToErrorResponse = (error) => {
+  const { message, status } = error;
   return Response.json({ message }, { status });
-}
+};
 
 export function toHttpError(error: unknown): HttpError {
   if (error instanceof HttpError) {

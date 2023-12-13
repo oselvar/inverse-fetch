@@ -30,7 +30,7 @@ const ThingBodySchema = z
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
-export const routeConfig: RouteConfig = {
+export const route: RouteConfig = {
   method: 'post',
   path: '/things/{thingId}',
   request: {
@@ -61,14 +61,14 @@ export const routeConfig: RouteConfig = {
 };
 
 // Add the route to the global registry - used to write the OpenAPI spec for the whole app
-registry.registerPath(routeConfig);
+registry.registerPath(route);
 
-const validator = new Validator(routeConfig);
+const validator = new Validator(route);
 
 type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
-export const thingHandler: FetchHandler = async (input) => {
+export const handler: FetchHandler = async (input) => {
   const params = validator.params<ThingParams>(input);
   const body = await validator.body<ThingBody>(input);
   if (params.thingId === respondWithBadTypeParams.thingId) {
