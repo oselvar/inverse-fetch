@@ -14,10 +14,12 @@ export type ToAwsLambdaHandler = {
   toErrorResponse?: ToErrorResponse;
 };
 
+/**
+ * Create an AWS Lambda handler from a [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) handler
+ */
 export function toAwsLambdaHandler(params: ToAwsLambdaHandler): AwsLambdaHandler {
   const { handler, toErrorResponse = toJsonEerrorResponse } = params;
   return async (event) => {
-    // const params = (event.pathParameters || {}) as StringParams;
     try {
       const request = toRequest(event);
       const response = await handler(request);
@@ -34,7 +36,8 @@ export function toAwsLambdaHandler(params: ToAwsLambdaHandler): AwsLambdaHandler
  * Convert an APIGatewayProxyEventV2 to a [Fetch API Request](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 function toRequest(event: APIGatewayProxyEventV2): Request {
-  const url = new URL(event.rawPath, `https://${event.requestContext.domainName}`);
+  const protocol = event.headers['X-Forwarded-Proto'] || 'https';
+  const url = new URL(event.rawPath, `${protocol}://${event.requestContext.domainName}`);
   url.search = event.rawQueryString;
 
   const requestInit: RequestInit = {

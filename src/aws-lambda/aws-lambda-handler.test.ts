@@ -28,7 +28,7 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
 
 describe('proxyHandler', () => {
   it('validates request and response', async () => {
-    const event = await toEvent(thingRequest(goodParams, goodThing), goodParams);
+    const event = await toEvent(thingRequest(goodParams, goodThing));
 
     const awsLambdaHandler = toAwsLambdaHandler({ handler });
     const result = (await awsLambdaHandler(
@@ -40,7 +40,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const event = await toEvent(thingRequest(badParams, goodThing), badParams);
+    const event = await toEvent(thingRequest(badParams, goodThing));
 
     const awsLambdaHandler = toAwsLambdaHandler({ handler });
     const result = await awsLambdaHandler(event, context, callback);
@@ -50,7 +50,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const event = await toEvent(thingRequest(goodParams, badThing), goodParams);
+    const event = await toEvent(thingRequest(goodParams, badThing));
 
     const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
@@ -60,10 +60,7 @@ describe('proxyHandler', () => {
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const event = await toEvent(
-      thingRequest(respondWithBadTypeParams, goodThing),
-      respondWithBadTypeParams,
-    );
+    const event = await toEvent(thingRequest(respondWithBadTypeParams, goodThing));
 
     const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
@@ -73,14 +70,10 @@ describe('proxyHandler', () => {
   });
 });
 
-async function toEvent(
-  request: Request,
-  params: Record<string, string>,
-): Promise<APIGatewayProxyEventV2> {
+async function toEvent(request: Request): Promise<APIGatewayProxyEventV2> {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   const url = new URL(request.url);
   const event: Partial<APIGatewayProxyEventV2> = {
-    pathParameters: params,
     rawPath: url.pathname,
     rawQueryString: url.searchParams.toString(),
     headers: Object.fromEntries(request.headers.entries()),
