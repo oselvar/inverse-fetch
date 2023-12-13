@@ -3,16 +3,17 @@ import type { ZodType } from 'zod';
 import { type SafeParseReturnType, z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+import type { Input, IRequestHelper, Json } from '../index.js';
 import {
   HttpError,
   HttpError404,
   HttpError415,
   HttpError422,
   HttpError500,
+  RequestHelper,
   toHttpError,
 } from '../index.js';
 
-type Input = RequestInfo | URL;
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
 
 export const ErrorSchema = z.object({
@@ -55,46 +56,47 @@ export const Response500: ResponseConfig = {
   },
 };
 
-export class Validator {
-  constructor(private routeConfig: RouteConfig) {}
+export class Validator implements IRequestHelper {
+  private readonly helper: IRequestHelper;
+  public readonly request: Request;
+  public readonly url: URL;
 
-  params<T>(input: Input): T {
+  constructor(
+    private readonly routeConfig: RouteConfig,
+    input: Input,
+  ) {
+    this.helper = new RequestHelper(routeConfig.path, input);
+    this.request = this.helper.request;
+    this.url = this.helper.url;
+  }
+
+  params<T extends Record<string, string>>(): T {
+    const params = this.helper.params();
     const schema = this.routeConfig.request?.params;
-
-    const pathPattern = this.routeConfig.path;
-    const path = toUrl(input).pathname;
-    const params = extractParams(pathPattern, path);
-
     return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', HttpError404);
   }
 
-  query<T>(input: Input): T {
+  query<T extends Record<string, string>>(): T {
+    const query = this.helper.query();
     const schema = this.routeConfig.request?.query;
-    const url = toUrl(input);
-    const query = Object.fromEntries(url.searchParams.entries());
     return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', HttpError404);
   }
 
-  async body<T>(input: Input): Promise<T> {
-    const request = toRequest(input);
-
-    const contentType = request.headers.get('content-type');
+  async bodyObject<T extends Json>(): Promise<T> {
+    const body = await this.helper.bodyObject();
+    if (!body) {
+      return body as T;
+    }
+    const contentType = this.helper.request.headers.get('content-type');
     if (!contentType) {
-      return null as T;
+      // Should never happen - the same check is in this.helper.bodyObject()
+      throw new HttpError415(`No Content-Type header`);
     }
     const schema = this.routeConfig.request?.body?.content[contentType]?.schema;
     if (!schema) {
       throw new HttpError415(`No schema for Content-Type: ${contentType}`);
     }
-    if (contentType === 'application/json') {
-      const body = await request.json();
-      return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, HttpError422);
-    } else if (contentType === 'application/x-www-form-urlencoded') {
-      const body = await request.formData();
-      const data = Object.fromEntries(body.entries());
-      return this.validateObject<T>(schema as ZodType<T>, data, `requestBody`, HttpError422);
-    }
-    throw new HttpError415(`Unsupported Content-Type: ${contentType}`);
+    return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, HttpError422);
   }
 
   async validate(response: Response): Promise<Response> {
@@ -144,34 +146,4 @@ export class Validator {
     const errorMessage = `Error validating ${type}: ${valueJson}\n\nSchema: ${schemaJson}`;
     throw new errorClass(errorMessage);
   }
-}
-
-function toRequest(input: Input): Request {
-  if (typeof input === 'string') {
-    return new Request(input);
-  } else if (input instanceof URL) {
-    return new Request(input);
-  } else if (input instanceof Request) {
-    return input;
-  }
-  throw new Error(`Invalid input: ${input}`);
-}
-
-function toUrl(input: Input): URL {
-  if (typeof input === 'string') {
-    return new URL(input);
-  } else if (input instanceof URL) {
-    return input;
-  } else if (input instanceof Request) {
-    return new URL(input.url);
-  }
-  throw new Error(`Invalid input: ${input}`);
-}
-
-function extractParams(pathPattern: string, path: string): Record<string, string> {
-  const paramRegex = /{([^}]*)}/g;
-  const paramNames = [...pathPattern.matchAll(paramRegex)].map((match) => match[1]);
-  const pathRegex = new RegExp(pathPattern.replace(paramRegex, '([^/]*)'), 'g');
-  const values = [...path.matchAll(pathRegex)].map((match) => match[1]);
-  return Object.fromEntries(paramNames.map((name, index) => [name, values[index]]));
 }
