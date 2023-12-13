@@ -8,20 +8,9 @@ export type FetchRouteContext<Params extends StringParams> = {
   request: Request;
 };
 
-/**
- * An extension of the Fetch API that uses RequestInitWithParams.
- */
-export type FetchHandler = (
-  input: RequestInfo | URL,
-  init?: RequestInitWithParams,
-) => Promise<Response>;
+export type Input = RequestInfo | URL;
 
-/**
- * An extension of the Fetch API's RequestInit that includes a params property.
- */
-export type RequestInitWithParams = RequestInit & {
-  params?: StringParams;
-};
+export type FetchHandler = typeof fetch;
 
 export type StringParams = Record<string, string | undefined>;
 
@@ -122,8 +111,13 @@ export const Response500: ResponseConfig = {
 export class Validator {
   constructor(private routeConfig: RouteConfig) {}
 
-  params<T extends TypedParams>(params: StringParams | undefined): T {
+  params<T extends TypedParams>(input: Input): T {
     const schema = this.routeConfig.request?.params;
+
+    const pathPattern = this.routeConfig.path;
+    const path = toUrl(input).pathname;
+    const params = extractParams(pathPattern, path);
+
     return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', HttpError404);
   }
 
@@ -192,7 +186,7 @@ export class Validator {
   }
 
   private validateObject<T>(
-    schema: ZodType<T>,
+    schema: ZodType<T> | undefined,
     value: unknown,
     type: ObjectType,
     errorClass: new (message: string) => HttpError,
@@ -219,4 +213,23 @@ export class Validator {
  */
 export function errorResponse(message: string, status: number): Response {
   return Response.json({ message }, { status });
+}
+
+export function toUrl(input: Input): URL {
+  if (typeof input === 'string') {
+    return new URL(input);
+  } else if (input instanceof URL) {
+    return input;
+  } else if (input instanceof Request) {
+    return new URL(input.url);
+  }
+  throw new Error(`Invalid input: ${input}`);
+}
+
+export function extractParams(pathPattern: string, path: string): StringParams {
+  const paramRegex = /{([^}]*)}/g;
+  const paramNames = [...pathPattern.matchAll(paramRegex)].map((match) => match[1]);
+  const pathRegex = new RegExp(pathPattern.replace(paramRegex, '([^/]*)'), 'g');
+  const values = [...path.matchAll(pathRegex)].map((match) => match[1]);
+  return Object.fromEntries(paramNames.map((name, index) => [name, values[index]]));
 }

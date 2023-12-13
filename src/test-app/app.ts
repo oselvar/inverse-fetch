@@ -68,14 +68,16 @@ const validator = new Validator(routeConfig);
 type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
-export const thingHandler: FetchHandler = async (input, init) => {
-  const params = validator.params<ThingParams>(init?.params);
+export const thingHandler: FetchHandler = async (input) => {
+  const params = validator.params<ThingParams>(input);
   const body = await validator.body<ThingBody>(input);
   if (params.thingId === respondWithBadTypeParams.thingId) {
     return validator.validate(Response.json({ foo: 'bar' }));
   }
   return validator.validate(Response.json(body));
 };
+
+// Test data
 
 export const goodThing: ThingBody = {
   name: 'mything',

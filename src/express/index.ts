@@ -3,7 +3,7 @@ import { Readable } from 'node:stream';
 import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import { type FetchHandler, type StringParams, toHttpError } from '../index.js';
+import { type FetchHandler, toHttpError } from '../index.js';
 
 export function addRoute(
   expressRouter: IRouter,
@@ -54,9 +54,7 @@ export function addRoute(
       }
     }
 
-    fetchHandler(request, {
-      params: req.params as StringParams,
-    })
+    fetchHandler(request)
       .then(writeResponse)
       .catch((error) => {
         const httpError = toHttpError(error);
