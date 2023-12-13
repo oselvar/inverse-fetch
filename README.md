@@ -1,182 +1,89 @@
-This is a small library that validates HTTP requests and responses against an OpenAPI 3.0 specification.
+# Inverse Fetch
 
-It is designed to work with any web servers/framework that uses the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) such as:
+Inverse Fetch is a convention for defining HTTP routes in a way that is compatible with the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
 
-* [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-* [Astro](https://astro.build/)
-* [Remix](https://remix.run/)
+![inverse-fetch.svg](doc/inverse-fetch.svg)
 
-It also provides adapters for non-Fetch based web servers/frameworks such as:
-
-* [AWS Lambda](https://aws.amazon.com/lambda/)
-* [Express](https://expressjs.com/) (coming soon)
-* [Fastify](https://www.fastify.io/) (coming soon)
-
-The library is built on top of [Zod](https://zod.dev/) and [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi).
-
-- [Installation](#installation)
-- [Define an OpenAPI route](#define-an-openapi-route)
-- [Create a validator](#create-a-validator)
-- [Validate requests and responses](#validate-requests-and-responses)
-- [Error handling](#error-handling)
-- [Adapters](#adapters)
-  - [AWS Lambda](#aws-lambda)
-  - [Express](#express)
-  - [Fastify](#fastify)
-
-## Installation
-
-```bash
-npm install --save @oselvar/openapi-validator
-```
-
-## Define an OpenAPI route
+The obligatory "Hello World" example:
 
 ```typescript
-import { RouteConfig } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
-
-import {
-  Response404,
-  Response415,
-  Response422,
-  Response500,
-} from '@oselvar/openapi-validator';
-
-// Define Zod schemas for the request parameters, query and body
-
-const ThingParamsSchema = z.object({
-  thingId: z.string().regex(/[\d]+/),
-});
-
-const ThingQuerySchema = z.object({
-  thingId: z.string().regex(/[\d]+/).optional(),
-});
-
-const ThingBodySchema = z.object({
-  name: z.string().regex(/[a-z]+/),
-  description: z.string().regex(/[a-z]+/),
-});
-
-// Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
-
-const routeConfig: RouteConfig = {
-  method: 'post',
-  path: '/things/{thingId}',
-  request: {
-    params: ThingParamsSchema,
-    query: ThingQuerySchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: ThingBodySchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Create a thing',
-      content: {
-        'application/json': {
-          schema: ThingBodySchema,
-        },
-      },
-    },
-    404: Response404,
-    415: Response415,
-    422: Response422,
-    500: Response500,
-  },
-};
-```
-
-## Create a validator
-
-The `Validator` class uses the schemas in the `routeConfig` object to validate requests and responses.
-
-```typescript
-import { Validator } from '@oselvar/openapi-validator';
-
-const validator = new Validator(routeConfig);
-```
-
-## Validate requests and responses
-
-Your web server will provide a `request` object and a `params` object.
-
-(If your web server does not use the Fetch API, see the [Adapters](#adapters) section below.)
-
-```typescript
-const request: Request = ...;
-const params: Record<string, string | undefined> = ...;
-
-const params = validator.params<z.infer<typeof ThingParamsSchema>>(params);
-const body = await validator.body<z.infer<typeof ThingBodySchema>>(request);
-const response = validator.validate(Response.json(body));
-```
-
-## Error handling
-
-The methods on the `Validator` object will throw a `ValidationError` if the request or response is invalid.
-You must handle this error and return an appropriate HTTP response to the client.
-
-We recommend doing this in a middleware function. Please refer to your web server's documentation for more information.
-
-Here is an example:
-
-```typescript
-import { unwrapError } from '@oselvar/openapi-validator';
-
-try {
-  // Run the handler
-} catch (error) {
-  const { message, response } = unwrapError(error);
-  console.error(response.status, message);
-  return response;
+// FetchHandler is an alias for `typeof fetch`
+export const handler: FetchHandler = async (input) => {
+  return new Response(`Hello World`)
 }
 ```
 
-## Adapters
-
-If you are using a framework that does *not* use the Fetch API [Request](https://developer.mozilla.org/en-US/docs/Web/API/Request) and [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) objects
-such as [AWS Lambda](https://aws.amazon.com/lambda/), [Express](https://expressjs.com/) or [Fastify](https://www.fastify.io/), use the `FetchRoute` type to define your handler function:
+Mount it in your express app:
 
 ```typescript
-import { FetchRoute, Validator } from '@oselvar/openapi-validator';
-import { RouteConfig } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
+import express from 'express'
+import { addRoute } from '@oselvar/inverse-fetch/express'
+import { handler } from './handler'
 
-const routeConfig: RouteConfig = { ... };
-const validator = new Validator(routeConfig);
-
-const fetchRoute: FetchRoute = async (context) => {
-  const params = validator.params<z.infer<typeof ThingParamsSchema>>(context.params);
-  const body = await validator.body<z.infer<typeof ThingBodySchema>>(context.request);
-  return validator.validate(Response.json(body));
-};
+addRoute({ router: app, method: 'get', path: '/hello', handler })
 ```
 
-Note that the support for multiple HTTP servers can also simplify your developer experience.
-You can write your handler function once and then register it with multiple HTTP servers.
-
-For example, you can register your handler functions with Express or Fastify during development and then register them with AWS Lambda during production.
-
-The next step is to convert the `FetchRoute` to a function that can be registered with your HTTP server.
-
-### AWS Lambda
+Or define an AWS Lambda function:
 
 ```typescript
-import { FetchOpenAPIHandler } from '@oselvar/openapi-validator';
-import { toProxyHandler } from '@oselvar/openapi-validator/aws-lambda';
+import { toAwsLambdaHandler } from '@oselvar/inverse-fetch/aws-lambda'
+import { handler as fetchHandler } from './handler'
 
-export const handler = toProxyHandler(fetchRoute);
+export const handler = toAwsLambdaHandler({ handler })
 ```
 
-### Express
+## Why?
 
-Coming soon.
+You might ask yourself why we need another convention for defining HTTP routes. After all, every JavaScript web framework has its own way of defining routes.
 
-### Fastify
+```typescript
+// Express
+app.get('/hello', (req, res) => {
+  res.send('Hello World')
+})
+```
 
-Coming soon.
+```typescript
+// AWS Lambda
+export const handler = async (event) => {
+  return {
+    statusCode: 200,
+    body: 'Hello World',
+  }
+}
+```
+
+```typescript
+// Fastify
+fastify.get('/hello', async (request, reply) => {
+  return 'Hello World'
+})
+```
+
+All of these web frameworks have one thing in common: 
+*They all have their own proprietary way of defining routes.*
+
+That's fine if you are only using one web framework, but what if you want to use multiple web frameworks?
+
+## Local development
+
+For instance, you might be using AWS Lambda during production. While it's possible to emulate AWS Lambda locally, you have to endure a very long delay between each change to your code. 
+
+By using a web framework such as Express or Fastify during development, you can get instant feedback on your changes.
+
+## Ultra-fast integration tests
+
+Another use case is integration testing your JavaScript client and your server.
+
+If your client uses the Fetch API, you can call your handler directly from the client. After all, the handler has exactly the same interface as `fetch`.
+
+This allows you to write integration tests that can run in milliseconds.
+
+## Helpers
+
+The `fetch` API is fairly low-level. It's not very convenient to use directly. That's why we have included some helper functions that make it easier to work with.
+
+### Path parameters
+
+```typescript
+```

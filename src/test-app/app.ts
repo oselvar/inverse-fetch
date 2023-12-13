@@ -1,7 +1,7 @@
 import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-import type { FetchHandler } from '../index.js';
+import { type FetchHandler } from '../index.js';
 import { Response404, Response415, Response422, Response500, Validator } from '../openapi/index.js';
 import { registry } from './registry.js';
 
@@ -63,14 +63,14 @@ export const route: RouteConfig = {
 // Add the route to the global registry - used to write the OpenAPI spec for the whole app
 registry.registerPath(route);
 
-const validator = new Validator(route);
-
 type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
 export const handler: FetchHandler = async (input) => {
-  const params = validator.params<ThingParams>(input);
-  const body = await validator.body<ThingBody>(input);
+  const validator = new Validator(route, input);
+
+  const params = validator.params<ThingParams>();
+  const body = await validator.bodyObject<ThingBody>();
   if (params.thingId === respondWithBadTypeParams.thingId) {
     return validator.validate(Response.json({ foo: 'bar' }));
   }

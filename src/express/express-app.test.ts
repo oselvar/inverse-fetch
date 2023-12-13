@@ -20,7 +20,8 @@ describe('expressApp', () => {
 
   beforeEach(() => {
     app = express();
-    addRoute({ router: app, route, handler, port });
+    const { method, path } = route;
+    addRoute({ router: app, method, path, handler });
 
     server = app.listen(port);
 

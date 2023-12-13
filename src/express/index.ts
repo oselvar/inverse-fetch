@@ -1,26 +1,29 @@
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
-import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import type { IRouter } from 'express';
 
-import type { FetchHandler, ToErrorResponse } from '../index.js';
+import type { FetchHandler, HttpMethod, ToErrorResponse } from '../index.js';
 import { toHttpError, toJsonEerrorResponse } from '../index.js';
 
 export type AddRouteParams = {
   router: IRouter;
-  route: RouteConfig;
+  method: HttpMethod;
+  path: string;
   handler: FetchHandler;
   toErrorResponse?: ToErrorResponse;
-  port: number;
+  port?: number;
 };
 
 export function addRoute(params: AddRouteParams) {
-  const { router, route, handler, toErrorResponse = toJsonEerrorResponse, port } = params;
-  const path = route.path.replace(/{([^}]+)}/g, ':$1');
+  const { router, method, path, handler, toErrorResponse = toJsonEerrorResponse, port } = params;
+  const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
-  router[route.method](path, (req, res) => {
-    const url = new URL(req.url, `${req.protocol}://${req.hostname}:${port}`);
+  router[method](expressPath, (req, res) => {
+    const url = new URL(req.url, `${req.protocol}://${req.hostname}`);
+    if (port !== undefined) {
+      url.port = String(port);
+    }
     if (typeof req.query === 'string') {
       url.search = req.query;
     } else if (typeof req.query === 'object') {
