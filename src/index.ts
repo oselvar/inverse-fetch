@@ -3,19 +3,9 @@ import type { ZodType } from 'zod';
 import { type SafeParseReturnType, z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-export type FetchRouteContext<Params extends StringParams> = {
-  params: Params;
-  request: Request;
-};
-
-export type Input = RequestInfo | URL;
-
 export type FetchHandler = typeof fetch;
 
-export type StringParams = Record<string, string | undefined>;
-
-export type TypedParams = Record<string, string | number | undefined>;
-
+type Input = RequestInfo | URL;
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
 
 export class HttpError extends Error {
@@ -111,7 +101,7 @@ export const Response500: ResponseConfig = {
 export class Validator {
   constructor(private routeConfig: RouteConfig) {}
 
-  params<T extends TypedParams>(input: Input): T {
+  params<T>(input: Input): T {
     const schema = this.routeConfig.request?.params;
 
     const pathPattern = this.routeConfig.path;
@@ -121,20 +111,16 @@ export class Validator {
     return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', HttpError404);
   }
 
-  query<T extends TypedParams>(request: Request): T {
+  query<T>(input: Input): T {
     const schema = this.routeConfig.request?.query;
-    const url = new URL(request.url, 'http://dummy.com');
+    const url = toUrl(input);
     const query = Object.fromEntries(url.searchParams.entries());
     return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', HttpError404);
   }
 
-  async body<T>(request: URL | RequestInfo): Promise<T> {
-    if (typeof request === 'string') {
-      request = new Request(request);
-    }
-    if (request instanceof URL) {
-      request = new Request(request);
-    }
+  async body<T>(input: Input): Promise<T> {
+    const request = toRequest(input);
+
     const contentType = request.headers.get('content-type');
     if (!contentType) {
       return null as T;
@@ -215,7 +201,18 @@ export function errorResponse(message: string, status: number): Response {
   return Response.json({ message }, { status });
 }
 
-export function toUrl(input: Input): URL {
+function toRequest(input: Input): Request {
+  if (typeof input === 'string') {
+    return new Request(input);
+  } else if (input instanceof URL) {
+    return new Request(input);
+  } else if (input instanceof Request) {
+    return input;
+  }
+  throw new Error(`Invalid input: ${input}`);
+}
+
+function toUrl(input: Input): URL {
   if (typeof input === 'string') {
     return new URL(input);
   } else if (input instanceof URL) {
@@ -226,7 +223,7 @@ export function toUrl(input: Input): URL {
   throw new Error(`Invalid input: ${input}`);
 }
 
-export function extractParams(pathPattern: string, path: string): StringParams {
+function extractParams(pathPattern: string, path: string): Record<string, string> {
   const paramRegex = /{([^}]*)}/g;
   const paramNames = [...pathPattern.matchAll(paramRegex)].map((match) => match[1]);
   const pathRegex = new RegExp(pathPattern.replace(paramRegex, '([^/]*)'), 'g');
