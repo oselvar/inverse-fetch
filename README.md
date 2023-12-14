@@ -1,6 +1,6 @@
 # Inverse Fetch
 
-Inverse Fetch is a convention for defining HTTP routes in a way that is compatible with the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+Inverse Fetch uses the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to define HTTP handlers on the server.
 
 ![inverse-fetch.svg](doc/inverse-fetch.svg)
 
@@ -13,9 +13,10 @@ export const handler: FetchHandler = async (input) => {
 }
 ```
 
-Mount it in your express app:
+A `FetchHandler` can be mounted in several different web frameworks:
 
 ```typescript
+// Express
 import express from 'express'
 import { addRoute } from '@oselvar/inverse-fetch/express'
 import { handler } from './handler'
@@ -23,9 +24,8 @@ import { handler } from './handler'
 addRoute({ router: app, method: 'get', path: '/hello', handler })
 ```
 
-Or define an AWS Lambda function:
-
 ```typescript
+// AWS Lambda
 import { toAwsLambdaHandler } from '@oselvar/inverse-fetch/aws-lambda'
 import { handler as fetchHandler } from './handler'
 
