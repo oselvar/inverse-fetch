@@ -3,14 +3,14 @@ import type { ZodType } from 'zod';
 import { type SafeParseReturnType, z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-import type { Input, IRequestHelper, Json } from '../index.js';
+import type { IFetchHelper, Input, Json } from '../index.js';
 import {
+  FetchHelper,
   HttpError,
   HttpError404,
   HttpError415,
   HttpError422,
   HttpError500,
-  RequestHelper,
   toHttpError,
 } from '../index.js';
 
@@ -56,8 +56,14 @@ export const Response500: ResponseConfig = {
   },
 };
 
-export class Validator implements IRequestHelper {
-  private readonly helper: IRequestHelper;
+/**
+ * Helper class for working with OpenAPI routes.
+ *
+ * This class is a wrapper around FetchHelper that provides additional functionality
+ * for validating OpenAPI requests and responses against a schema.
+ */
+export class OpenAPIHelper implements IFetchHelper {
+  private readonly helper: IFetchHelper;
   public readonly request: Request;
   public readonly url: URL;
 
@@ -65,7 +71,7 @@ export class Validator implements IRequestHelper {
     private readonly routeConfig: RouteConfig,
     input: Input,
   ) {
-    this.helper = new RequestHelper(routeConfig.path, input);
+    this.helper = new FetchHelper(routeConfig.path, input);
     this.request = this.helper.request;
     this.url = this.helper.url;
   }
@@ -99,7 +105,7 @@ export class Validator implements IRequestHelper {
     return this.validateObject<T>(schema as ZodType<T>, body, `requestBody`, HttpError422);
   }
 
-  async validate(response: Response): Promise<Response> {
+  async respondWith(response: Response): Promise<Response> {
     const copy = response.clone();
 
     const status = copy.status;

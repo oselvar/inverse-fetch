@@ -2,7 +2,13 @@ import { extendZodWithOpenApi, type RouteConfig } from '@asteasolutions/zod-to-o
 import { z } from 'zod';
 
 import { type FetchHandler } from '../index.js';
-import { Response404, Response415, Response422, Response500, Validator } from '../openapi/index.js';
+import {
+  OpenAPIHelper,
+  Response404,
+  Response415,
+  Response422,
+  Response500,
+} from '../openapi/index.js';
 import { registry } from './registry.js';
 
 extendZodWithOpenApi(z);
@@ -67,14 +73,14 @@ type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
 export const handler: FetchHandler = async (input) => {
-  const validator = new Validator(route, input);
+  const helper = new OpenAPIHelper(route, input);
 
-  const params = validator.params<ThingParams>();
-  const body = await validator.bodyObject<ThingBody>();
+  const params = helper.params<ThingParams>();
+  const body = await helper.bodyObject<ThingBody>();
   if (params.thingId === respondWithBadTypeParams.thingId) {
-    return validator.validate(Response.json({ foo: 'bar' }));
+    return helper.respondWith(Response.json({ foo: 'bar' }));
   }
-  return validator.validate(Response.json(body));
+  return helper.respondWith(Response.json(body));
 };
 
 // Test data

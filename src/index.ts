@@ -41,15 +41,16 @@ export type Input = RequestInfo | URL;
 
 export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
-export interface IRequestHelper {
+export interface IFetchHelper {
   readonly request: Request;
   readonly url: URL;
   params<T extends Record<string, string>>(): T;
   query<T extends Record<string, string>>(): T;
   bodyObject<T extends Json>(): Promise<T>;
+  respondWith(response: Response): Promise<Response>;
 }
 
-export class RequestHelper implements IRequestHelper {
+export class FetchHelper implements IFetchHelper {
   public readonly request: Request;
   public readonly url: URL;
 
@@ -70,7 +71,11 @@ export class RequestHelper implements IRequestHelper {
   }
 
   params<T extends Record<string, string>>(): T {
-    return extractParams(this.pathPattern, this.url.pathname) as T;
+    const paramRegex = /{([^}]*)}/g;
+    const paramNames = [...this.pathPattern.matchAll(paramRegex)].map((match) => match[1]);
+    const pathRegex = new RegExp(this.pathPattern.replace(paramRegex, '([^/]*)'), 'g');
+    const values = [...this.url.pathname.matchAll(pathRegex)].map((match) => match[1]);
+    return Object.fromEntries(paramNames.map((name, index) => [name, values[index]])) as T;
   }
 
   query<T extends Record<string, string>>(): T {
@@ -95,6 +100,10 @@ export class RequestHelper implements IRequestHelper {
     }
     throw new HttpError415(`Unsupported Content-Type: ${contentType}`);
   }
+
+  async respondWith(response: Response): Promise<Response> {
+    return response;
+  }
 }
 
 /**
@@ -118,13 +127,4 @@ export function toHttpError(error: unknown): HttpError {
   } else {
     return new HttpError500('Unknown error');
   }
-}
-
-// TODO: Remove export
-export function extractParams(pathPattern: string, path: string): Record<string, string> {
-  const paramRegex = /{([^}]*)}/g;
-  const paramNames = [...pathPattern.matchAll(paramRegex)].map((match) => match[1]);
-  const pathRegex = new RegExp(pathPattern.replace(paramRegex, '([^/]*)'), 'g');
-  const values = [...path.matchAll(pathRegex)].map((match) => match[1]);
-  return Object.fromEntries(paramNames.map((name, index) => [name, values[index]]));
 }

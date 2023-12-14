@@ -65,6 +65,8 @@ All of these web frameworks have one thing in common:
 
 That's fine if you are only using one web framework, but what if you want to use multiple web frameworks?
 
+Why on earth would you want to use multiple web frameworks? Well, there are a few use cases:
+
 ## Local development
 
 For instance, you might be using AWS Lambda during production. While it's possible to emulate AWS Lambda locally, you have to endure a very long delay between each change to your code. 
@@ -81,7 +83,23 @@ This allows you to write integration tests that can run in milliseconds.
 
 ## Helpers
 
-The `fetch` API is fairly low-level. It's not very convenient to use directly. That's why we have included some helper functions that make it easier to work with.
+The `fetch` API is fairly low-level. The `FetchHandler` is passed an `input` object which may be of type `string`, `Request` or `URL`,
+A fair amount of type checking is required before you can extract values such as the request body, path parameters etc.
+
+To make this easier, the `inverse-fetch` module provides a `FetchHelper` class that wraps the `input` and `init` arguments:
+
+```typescript
+// Inverse Fetch uses path patterns where path parameters are wrapped in curly braces.
+// This is different from the Express convention where path parameters are prefixed with a colon.
+// This is also used for file based routing.
+const pathPattern = '/hello/{name}'
+
+export const handler: FetchHandler = async (input) => {
+  const helper = new FetchHelper(input, pathPattern)
+  const params = helper.params()
+  return helper.respond(new Response(`Hello World`))
+}
+```
 
 ### Path parameters
 
