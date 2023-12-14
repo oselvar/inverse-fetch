@@ -1,6 +1,16 @@
 export type FetchHandler = typeof fetch;
 
-export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options' | 'trace';
+export const HttpMethods = [
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'HEAD',
+  'OPTIONS',
+  'TRACE',
+] as const;
+export type HttpMethod = (typeof HttpMethods)[number];
 
 export type Input = RequestInfo | URL;
 

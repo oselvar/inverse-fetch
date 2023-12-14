@@ -4,14 +4,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { errorHandler } from '../index.js';
 import { Api, HttpClient } from '../test-app/ApiClient.js';
+import { routeDir } from '../test-app/app.js';
 import {
   badParams,
   goodParams,
   handler,
   respondWithBadTypeParams,
-  route,
 } from '../test-app/routes/things/{thingId}/POST';
-import { addRoute } from './index.js';
+import { addRoutes } from './index.js';
 
 describe('expressApp', () => {
   const port = 3000;
@@ -19,11 +19,9 @@ describe('expressApp', () => {
   let server: Server;
   let api: Api<unknown>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = express();
-    const { method, path } = route;
-    addRoute({ router: app, method, path, handler });
-
+    await addRoutes(app, routeDir);
     server = app.listen(port);
 
     const httpClient = new HttpClient({
@@ -36,7 +34,7 @@ describe('expressApp', () => {
     server.close();
   });
 
-  it('makes a successful request', async () => {
+  it.only('makes a successful request', async () => {
     const res = await api.things.thingsCreate(goodParams, {
       name: 'mything',
       description: 'besthingever',

@@ -3,6 +3,7 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
 import type { IRouter } from 'express';
 
+import { importEndpoints } from '../file-based-routing/index.js';
 import type { FetchHandler, HttpMethod, ToErrorResponse } from '../index.js';
 import { errorHandler, toJsonErrorResponse } from '../index.js';
 
@@ -15,11 +16,25 @@ export type AddRouteParams = {
   port?: number;
 };
 
+/**
+ * File based routing for Express. Adds FetchHandler routes to an Express router.
+ *
+ * @param router the express router, for example `express()` or `express.Router()`.
+ * @param routeDir the directory containing the routes.
+ */
+export async function addRoutes(router: IRouter, routeDir: string) {
+  const endpoints = await importEndpoints(routeDir);
+  for (const endpoint of endpoints) {
+    addRoute({ router, ...endpoint });
+  }
+}
+
 export function addRoute(params: AddRouteParams) {
   const { router, method, path, handler, toErrorResponse = toJsonErrorResponse, port } = params;
   const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
-  router[method](expressPath, (req, res, next) => {
+  const lowerCaseMethod = method.toLowerCase() as Lowercase<HttpMethod>;
+  router[lowerCaseMethod](expressPath, (req, res, next) => {
     const url = new URL(req.url, `${req.protocol}://${req.hostname}`);
     if (port !== undefined) {
       url.port = String(port);
