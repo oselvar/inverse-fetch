@@ -61,13 +61,20 @@ describe('FetchRoute', () => {
   });
 
   describe('acceptance', () => {
-    const api = new Api(
-      new HttpClient({
-        customFetch: errorHandler(handler),
-      }),
-    );
+    defineAcceptanceTests(async () => {
+      const api = new Api(
+        new HttpClient({
+          customFetch: errorHandler(handler),
+        }),
+      );
 
-    defineAcceptanceTests(api);
+      return {
+        api,
+        stop() {
+          // no-op
+        },
+      };
+    });
   });
 });
 

@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it } from 'vitest';
 
 import type { Api } from './test-app/ApiClient';
 import {
@@ -7,7 +7,24 @@ import {
   respondWithBadTypeParams,
 } from './test-app/routes/things/{thingId}/POST';
 
-export function defineAcceptanceTests(api: Api<unknown>) {
+type TestContext = {
+  api: Api<unknown>;
+  stop(): void;
+};
+
+export function defineAcceptanceTests(getContext: () => Promise<TestContext>) {
+  let testContext: TestContext;
+  let api: Api<unknown>;
+
+  beforeEach(async () => {
+    testContext = await getContext();
+    api = testContext.api;
+  });
+
+  afterEach(() => {
+    testContext.stop();
+  });
+
   it('makes a successful request', async () => {
     const res = await api.things.thingsCreate(goodParams, {
       name: 'mything',
