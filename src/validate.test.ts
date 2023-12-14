@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { HttpError404, HttpError415, HttpError422, HttpError500 } from './index.js';
+import { defineAcceptanceTests } from './defineContract.js';
+import { errorHandler, HttpError404, HttpError415, HttpError422, HttpError500 } from './index.js';
+import { Api, HttpClient } from './test-app/ApiClient.js';
 import type { ThingBody, ThingParams } from './test-app/routes/things/{thingId}/POST.js';
 import {
   badParams,
@@ -56,6 +58,16 @@ describe('FetchRoute', () => {
     expect(handler(thingRequest(respondWithBadTypeParams, goodThing))).rejects.toThrowError(
       HttpError500,
     );
+  });
+
+  describe('acceptance', () => {
+    const api = new Api(
+      new HttpClient({
+        customFetch: errorHandler(handler),
+      }),
+    );
+
+    defineAcceptanceTests(api);
   });
 });
 
