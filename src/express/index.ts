@@ -4,7 +4,7 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type { IRouter } from 'express';
 
 import type { FetchHandler, HttpMethod, ToErrorResponse } from '../index.js';
-import { toHttpError, toJsonErrorResponse } from '../index.js';
+import { errorHandler, toJsonErrorResponse } from '../index.js';
 
 export type AddRouteParams = {
   router: IRouter;
@@ -19,7 +19,7 @@ export function addRoute(params: AddRouteParams) {
   const { router, method, path, handler, toErrorResponse = toJsonErrorResponse, port } = params;
   const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
-  router[method](expressPath, (req, res) => {
+  router[method](expressPath, (req, res, next) => {
     const url = new URL(req.url, `${req.protocol}://${req.hostname}`);
     if (port !== undefined) {
       url.port = String(port);
@@ -45,24 +45,19 @@ export function addRoute(params: AddRouteParams) {
     };
     const request = new Request(url, requestInit);
 
-    function writeResponse(response: Response) {
-      res.status(response.status);
-      response.headers.forEach((value, key) => {
-        res.setHeader(key, value);
-      });
-      if (response.body) {
-        Readable.fromWeb(response.body as NodeReadableStream).pipe(res);
-      } else {
-        res.end();
-      }
-    }
-
-    handler(request)
-      .then(writeResponse)
-      .catch((error) => {
-        const httpError = toHttpError(error);
-        const response = toErrorResponse(httpError);
-        writeResponse(response);
-      });
+    const eh = errorHandler(handler, toErrorResponse);
+    eh(request)
+      .then((response) => {
+        res.status(response.status);
+        response.headers.forEach((value, key) => {
+          res.setHeader(key, value);
+        });
+        if (response.body) {
+          Readable.fromWeb(response.body as NodeReadableStream).pipe(res);
+        } else {
+          res.end();
+        }
+      })
+      .catch(next);
   });
 }

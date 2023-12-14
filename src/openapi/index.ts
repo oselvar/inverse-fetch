@@ -11,7 +11,6 @@ import {
   HttpError415,
   HttpError422,
   HttpError500,
-  toHttpError,
 } from '../index.js';
 
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
@@ -125,12 +124,8 @@ export class OpenAPIHelper implements IFetchHelper {
         throw new HttpError500(`No response config content for status ${status}`);
       }
       const schema = responseConfig.content[contentType].schema;
-      try {
-        const data = await copy.json();
-        this.validateObject(schema as ZodType<unknown>, data, 'responseBody', HttpError500);
-      } catch (error) {
-        throw toHttpError(error);
-      }
+      const data = await copy.json();
+      this.validateObject(schema as ZodType<unknown>, data, 'responseBody', HttpError500);
     }
     return response;
   }

@@ -7,7 +7,7 @@ import type {
 export type AwsLambdaHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
 import type { FetchHandler, ToErrorResponse } from '../index.js';
-import { toHttpError, toJsonErrorResponse } from '../index.js';
+import { errorHandler, toJsonErrorResponse } from '../index.js';
 
 export type ToAwsLambdaHandler = {
   handler: FetchHandler;
@@ -19,16 +19,11 @@ export type ToAwsLambdaHandler = {
  */
 export function toAwsLambdaHandler(params: ToAwsLambdaHandler): AwsLambdaHandler {
   const { handler, toErrorResponse = toJsonErrorResponse } = params;
+  const eh = errorHandler(handler, toErrorResponse);
   return async (event) => {
-    try {
-      const request = toRequest(event);
-      const response = await handler(request);
-      return toResult(response);
-    } catch (error) {
-      const httpError = toHttpError(error);
-      const response = toErrorResponse(httpError);
-      return toResult(response);
-    }
+    const request = toRequest(event);
+    const response = await eh(request);
+    return toResult(response);
   };
 }
 

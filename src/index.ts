@@ -1,52 +1,36 @@
 export type FetchHandler = typeof fetch;
 
-export class HttpError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-  }
-}
-
-export class HttpError404 extends HttpError {
-  constructor(message: string) {
-    super(message, 404);
-  }
-}
-
-export class HttpError415 extends HttpError {
-  constructor(message: string) {
-    super(message, 415);
-  }
-}
-
-export class HttpError422 extends HttpError {
-  constructor(message: string) {
-    super(message, 422);
-  }
-}
-
-export class HttpError500 extends HttpError {
-  constructor(message: string) {
-    super(message, 500);
-  }
-}
-
-export type ToErrorResponse = (error: HttpError) => Response;
-
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options' | 'trace';
 
 export type Input = RequestInfo | URL;
 
 export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
+/**
+ * A Fetch API helper interface that simplifies retrieval of data from a request.
+ */
 export interface IFetchHelper {
   readonly request: Request;
   readonly url: URL;
+
+  /**
+   * Returns the path parameters from the request URL.
+   */
   params<T extends Record<string, string>>(): T;
+
+  /**
+   * Returns the query parameters from the request URL.
+   */
   query<T extends Record<string, string>>(): T;
+
+  /**
+   * Returns the request body as a JSON object.
+   */
   bodyObject<T extends Json>(): Promise<T>;
+
+  /**
+   * Returns the response.
+   */
   respondWith(response: Response): Promise<Response>;
 }
 
@@ -118,18 +102,13 @@ export const toJsonErrorResponse: ToErrorResponse = (error) => {
   return Response.json({ message }, { status });
 };
 
-export function toHttpError(error: unknown): HttpError {
-  if (error instanceof HttpError) {
-    return error;
-  } else if (error instanceof Error) {
-    const httpError = new HttpError500(error.message);
-    httpError.cause = error;
-    return httpError;
-  } else {
-    return new HttpError500('Unknown error');
-  }
-}
-
+/**
+ * Creates a Fetch API handler that catches errors and converts them to a Response.
+ *
+ * @param handler a non-error-handling Fetch API handler
+ * @param toErrorResponse optional function to convert an HttpError to a Response
+ * @returns a Fetch API handler that never throws errors, always returns a Response
+ */
 export function errorHandler(
   handler: FetchHandler,
   toErrorResponse: ToErrorResponse = toJsonErrorResponse,
@@ -142,4 +121,53 @@ export function errorHandler(
       return toErrorResponse(httpError);
     }
   };
+}
+
+//////// Errors
+
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+export class HttpError404 extends HttpError {
+  constructor(message: string) {
+    super(message, 404);
+  }
+}
+
+export class HttpError415 extends HttpError {
+  constructor(message: string) {
+    super(message, 415);
+  }
+}
+
+export class HttpError422 extends HttpError {
+  constructor(message: string) {
+    super(message, 422);
+  }
+}
+
+export class HttpError500 extends HttpError {
+  constructor(message: string) {
+    super(message, 500);
+  }
+}
+
+export type ToErrorResponse = (error: HttpError) => Response;
+
+function toHttpError(error: unknown): HttpError {
+  if (error instanceof HttpError) {
+    return error;
+  } else if (error instanceof Error) {
+    const httpError = new HttpError500(error.message);
+    httpError.cause = error;
+    return httpError;
+  } else {
+    return new HttpError500('Unknown error');
+  }
 }
