@@ -70,8 +70,9 @@ export class OpenAPIHelper implements IFetchHelper {
   constructor(
     private readonly routeConfig: RouteConfig,
     input: Input,
+    init: RequestInit | undefined,
   ) {
-    this.helper = new FetchHelper(routeConfig.path, input);
+    this.helper = new FetchHelper(routeConfig.path, input, init);
     this.request = this.helper.request;
     this.url = this.helper.url;
   }

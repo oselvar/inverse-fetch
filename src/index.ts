@@ -57,11 +57,12 @@ export class FetchHelper implements IFetchHelper {
   constructor(
     private readonly pathPattern: string,
     input: Input,
+    init: RequestInit | undefined,
   ) {
     if (typeof input === 'string') {
-      this.request = new Request(input);
+      this.request = new Request(input, init);
     } else if (input instanceof URL) {
-      this.request = new Request(input);
+      this.request = new Request(input, init);
     } else if (input instanceof Request) {
       this.request = input;
     } else {
@@ -112,7 +113,7 @@ export class FetchHelper implements IFetchHelper {
  * @param status the HTTP status code
  * @returns a Response
  */
-export const toJsonEerrorResponse: ToErrorResponse = (error) => {
+export const toJsonErrorResponse: ToErrorResponse = (error) => {
   const { message, status } = error;
   return Response.json({ message }, { status });
 };
@@ -127,4 +128,18 @@ export function toHttpError(error: unknown): HttpError {
   } else {
     return new HttpError500('Unknown error');
   }
+}
+
+export function errorHandler(
+  handler: FetchHandler,
+  toErrorResponse: ToErrorResponse = toJsonErrorResponse,
+): FetchHandler {
+  return async (input, init) => {
+    try {
+      return await handler(input, init);
+    } catch (error) {
+      const httpError = toHttpError(error);
+      return toErrorResponse(httpError);
+    }
+  };
 }

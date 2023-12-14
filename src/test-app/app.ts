@@ -72,8 +72,8 @@ registry.registerPath(route);
 type ThingParams = z.infer<typeof ThingParamsSchema>;
 type ThingBody = z.infer<typeof ThingBodySchema>;
 
-export const handler: FetchHandler = async (input) => {
-  const helper = new OpenAPIHelper(route, input);
+export const handler: FetchHandler = async (input, init) => {
+  const helper = new OpenAPIHelper(route, input, init);
 
   const params = helper.params<ThingParams>();
   const body = await helper.bodyObject<ThingBody>();

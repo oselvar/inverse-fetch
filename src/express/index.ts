@@ -4,7 +4,7 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type { IRouter } from 'express';
 
 import type { FetchHandler, HttpMethod, ToErrorResponse } from '../index.js';
-import { toHttpError, toJsonEerrorResponse } from '../index.js';
+import { toHttpError, toJsonErrorResponse } from '../index.js';
 
 export type AddRouteParams = {
   router: IRouter;
@@ -16,7 +16,7 @@ export type AddRouteParams = {
 };
 
 export function addRoute(params: AddRouteParams) {
-  const { router, method, path, handler, toErrorResponse = toJsonEerrorResponse, port } = params;
+  const { router, method, path, handler, toErrorResponse = toJsonErrorResponse, port } = params;
   const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
   router[method](expressPath, (req, res) => {

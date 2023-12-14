@@ -2,6 +2,7 @@ import express from 'express';
 import type { Server } from 'http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { errorHandler } from '../index.js';
 import { Api, HttpClient } from '../test-app/ApiClient.js';
 import {
   badParams,
@@ -25,7 +26,9 @@ describe('expressApp', () => {
 
     server = app.listen(port);
 
-    const httpClient = new HttpClient();
+    const httpClient = new HttpClient({
+      customFetch: errorHandler(handler),
+    });
     api = new Api(httpClient);
   });
 
