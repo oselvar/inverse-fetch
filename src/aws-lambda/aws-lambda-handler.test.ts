@@ -17,8 +17,8 @@ import {
   goodThing,
   handler,
   respondWithBadTypeParams,
-  thingRequest,
-} from '../test-app/app.js';
+} from '../test-app/routes/things/{thingId}/POST.js';
+import { thingRequest } from '../validate.test.js';
 import { toAwsLambdaHandler } from './index.js';
 
 const context = {} as Context;

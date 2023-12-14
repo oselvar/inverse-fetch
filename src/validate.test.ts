@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { HttpError404, HttpError415, HttpError422, HttpError500 } from './index.js';
+import type { ThingBody, ThingParams } from './test-app/routes/things/{thingId}/POST.js';
 import {
   badParams,
   badThing,
@@ -8,8 +9,7 @@ import {
   goodThing,
   handler,
   respondWithBadTypeParams,
-  thingRequest,
-} from './test-app/app';
+} from './test-app/routes/things/{thingId}/POST.js';
 
 describe('FetchRoute', () => {
   it('validates request and response', async () => {
@@ -46,3 +46,13 @@ describe('FetchRoute', () => {
     );
   });
 });
+
+export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {
+  return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
+    method: 'post',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(thing),
+  });
+}

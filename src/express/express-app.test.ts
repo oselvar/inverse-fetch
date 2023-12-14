@@ -10,7 +10,7 @@ import {
   handler,
   respondWithBadTypeParams,
   route,
-} from '../test-app/app.js';
+} from '../test-app/routes/things/{thingId}/POST';
 import { addRoute } from './index.js';
 
 describe('expressApp', () => {
