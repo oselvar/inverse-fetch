@@ -13,6 +13,10 @@ import {
   HttpError500,
 } from '../index.js';
 
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+export type Route = Optional<RouteConfig, 'method' | 'path'>;
+
 type ObjectType = 'params' | 'query' | 'requestBody' | 'responseBody';
 
 export const ErrorSchema = z.object({
@@ -67,24 +71,27 @@ export class OpenAPIHelper implements IFetchHelper {
   public readonly url: URL;
 
   constructor(
-    private readonly routeConfig: RouteConfig,
+    private readonly route: Route,
     input: Input,
     init: RequestInit | undefined,
   ) {
-    this.helper = new FetchHelper(routeConfig.path, input, init);
+    if (route.path === undefined) {
+      throw new Error(`Route path is undefined`);
+    }
+    this.helper = new FetchHelper(route.path, input, init);
     this.request = this.helper.request;
     this.url = this.helper.url;
   }
 
   params<T extends Record<string, string>>(): T {
     const params = this.helper.params();
-    const schema = this.routeConfig.request?.params;
+    const schema = this.route.request?.params;
     return this.validateObject<T>(schema as unknown as ZodType<T>, params, 'params', HttpError404);
   }
 
   query<T extends Record<string, string>>(): T {
     const query = this.helper.query();
-    const schema = this.routeConfig.request?.query;
+    const schema = this.route.request?.query;
     return this.validateObject<T>(schema as unknown as ZodType<T>, query, 'query', HttpError404);
   }
 
@@ -98,7 +105,7 @@ export class OpenAPIHelper implements IFetchHelper {
       // Should never happen - the same check is in this.helper.bodyObject()
       throw new HttpError415(`No Content-Type header`);
     }
-    const schema = this.routeConfig.request?.body?.content[contentType]?.schema;
+    const schema = this.route.request?.body?.content[contentType]?.schema;
     if (!schema) {
       throw new HttpError415(`No schema for Content-Type: ${contentType}`);
     }
@@ -110,9 +117,9 @@ export class OpenAPIHelper implements IFetchHelper {
 
     const status = copy.status;
 
-    const responseConfig = this.routeConfig.responses[status];
+    const responseConfig = this.route.responses[status];
     if (!responseConfig) {
-      const statuses = Object.keys(this.routeConfig.responses).join(', ');
+      const statuses = Object.keys(this.route.responses).join(', ');
       throw new HttpError500(
         `No response config for status ${status}. Allowed statuses: ${statuses}`,
       );

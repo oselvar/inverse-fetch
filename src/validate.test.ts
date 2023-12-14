@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { HttpError404, HttpError415, HttpError422, HttpError500 } from './index.js';
 import type { ThingBody, ThingParams } from './test-app/routes/things/{thingId}/POST.js';
@@ -9,9 +9,21 @@ import {
   goodThing,
   handler,
   respondWithBadTypeParams,
+  route,
 } from './test-app/routes/things/{thingId}/POST.js';
 
 describe('FetchRoute', () => {
+  beforeEach(() => {
+    // This is set by file-based routing.
+    // Since we're not using file-based routing here, we need to set it manually.
+    route.path = '/things/{thingId}';
+  });
+
+  afterEach(() => {
+    // Unset the path so that it doesn't leak into other tests.
+    route.path = undefined;
+  });
+
   it('validates request and response', async () => {
     const response = await handler(thingRequest(goodParams, goodThing));
     const responseBody = await response.json();

@@ -1,3 +1,4 @@
+import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
 import * as yaml from 'yaml';
 
@@ -8,7 +9,7 @@ import { registry } from '../src/test-app/registry.js';
 const endpoints = await importEndpoints(routeDir);
 for (const { route } of endpoints) {
   if (route) {
-    registry.registerPath(route);
+    registry.registerPath(route as RouteConfig);
   }
 }
 const generator = new OpenApiGeneratorV3(registry.definitions);

@@ -1,6 +1,5 @@
-import { type RouteConfig } from '@asteasolutions/zod-to-openapi';
-
 import { type FetchHandler } from '../../../../index.js';
+import type { Route } from '../../../../openapi/index.js';
 import {
   OpenAPIHelper,
   Response404,
@@ -33,9 +32,7 @@ const ThingBodySchema = z
 
 // Define an OpenAPI route using https://github.com/asteasolutions/zod-to-openapi
 
-export const route: RouteConfig = {
-  method: 'post',
-  path: '/things/{thingId}',
+export const route: Route = {
   request: {
     params: ThingParamsSchema,
     query: ThingQuerySchema,

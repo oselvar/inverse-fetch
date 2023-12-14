@@ -3,18 +3,10 @@ import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
 import type { IRouter } from 'express';
 
+import type { Endpoint } from '../file-based-routing/index.js';
 import { importEndpoints } from '../file-based-routing/index.js';
-import type { FetchHandler, HttpMethod, ToErrorResponse } from '../index.js';
+import type { HttpMethod, ToErrorResponse } from '../index.js';
 import { errorHandler, toJsonErrorResponse } from '../index.js';
-
-export type AddRouteParams = {
-  router: IRouter;
-  method: HttpMethod;
-  path: string;
-  handler: FetchHandler;
-  toErrorResponse?: ToErrorResponse;
-  port?: number;
-};
 
 /**
  * File based routing for Express. Adds FetchHandler routes to an Express router.
@@ -29,8 +21,21 @@ export async function addRoutes(router: IRouter, routeDir: string) {
   }
 }
 
+export type AddRouteParams = Endpoint & {
+  router: IRouter;
+  toErrorResponse?: ToErrorResponse;
+  port?: number;
+};
+
 export function addRoute(params: AddRouteParams) {
-  const { router, method, path, handler, toErrorResponse = toJsonErrorResponse, port } = params;
+  const {
+    router,
+    method,
+    pathPattern: path,
+    handler,
+    toErrorResponse = toJsonErrorResponse,
+    port,
+  } = params;
   const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
   const lowerCaseMethod = method.toLowerCase() as Lowercase<HttpMethod>;

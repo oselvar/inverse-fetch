@@ -8,7 +8,7 @@ import type {
   Callback,
   Context,
 } from 'aws-lambda';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   badParams,
@@ -17,6 +17,7 @@ import {
   goodThing,
   handler,
   respondWithBadTypeParams,
+  route,
 } from '../test-app/routes/things/{thingId}/POST.js';
 import { thingRequest } from '../validate.test.js';
 import { toAwsLambdaHandler } from './index.js';
@@ -27,6 +28,17 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
 };
 
 describe('aws-lambda-handler', () => {
+  beforeEach(() => {
+    // This is set by file-based routing.
+    // Since we're not using file-based routing here, we need to set it manually.
+    route.path = '/things/{thingId}';
+  });
+
+  afterEach(() => {
+    // Unset the path so that it doesn't leak into other tests.
+    route.path = undefined;
+  });
+
   it('validates request and response', async () => {
     const event = await toEvent(thingRequest(goodParams, goodThing));
 
