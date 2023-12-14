@@ -26,7 +26,7 @@ const callback: Callback<APIGatewayProxyResultV2> = () => {
   throw new Error('not implemented');
 };
 
-describe('proxyHandler', () => {
+describe('aws-lambda-handler', () => {
   it('validates request and response', async () => {
     const event = await toEvent(thingRequest(goodParams, goodThing));
 

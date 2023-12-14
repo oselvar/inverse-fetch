@@ -1,5 +1,6 @@
 import { basename, dirname, relative } from 'node:path';
 
+import type { RouteConfig } from '@asteasolutions/zod-to-openapi';
 import fg from 'fast-glob';
 
 import { type FetchHandler, type HttpMethod, HttpMethods } from '../index.js';
@@ -10,6 +11,7 @@ export type Endpoint = {
   path: string;
   method: HttpMethod;
   handler: FetchHandler;
+  route: RouteConfig;
 };
 
 export async function importEndpoints(routeDir: string): Promise<readonly Endpoint[]> {
@@ -29,6 +31,7 @@ export async function importEndpoints(routeDir: string): Promise<readonly Endpoi
         path,
         method,
         handler: module.handler,
+        route: module.route,
       });
     }
   }

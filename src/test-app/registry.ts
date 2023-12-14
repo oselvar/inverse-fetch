@@ -4,3 +4,4 @@ import { z } from 'zod';
 extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
+export { z };

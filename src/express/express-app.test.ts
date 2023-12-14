@@ -34,7 +34,7 @@ describe('expressApp', () => {
     server.close();
   });
 
-  it.only('makes a successful request', async () => {
+  it('makes a successful request', async () => {
     const res = await api.things.thingsCreate(goodParams, {
       name: 'mything',
       description: 'besthingever',

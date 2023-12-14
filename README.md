@@ -1,27 +1,40 @@
-# Inverse Fetch
-
 Inverse Fetch uses the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) to define HTTP handlers on the server.
 
 ![inverse-fetch.svg](doc/inverse-fetch.svg)
 
+By using the Fetch API to define routes we get some powerful benefits
+
+- [Example](#example)
+- [Why?](#why)
+- [Local development](#local-development)
+- [Ultra-fast integration tests](#ultra-fast-integration-tests)
+- [Mounting handlers in your web framework](#mounting-handlers-in-your-web-framework)
+  - [File based routing](#file-based-routing)
+- [Helpers](#helpers)
+  - [Path parameters](#path-parameters)
+- [Benchmarks](#benchmarks)
+  
+## Example
+
 The obligatory "Hello World" example:
 
 ```typescript
+// ./routes/hello.ts
 // FetchHandler is an alias for `typeof fetch`
 export const handler: FetchHandler = async (input) => {
   return new Response(`Hello World`)
 }
 ```
 
-A `FetchHandler` can be mounted in several different web frameworks:
+Your `FetchHandler`s can be mounted in several different web frameworks using *file based routing*:
 
 ```typescript
 // Express
 import express from 'express'
-import { addRoute } from '@oselvar/inverse-fetch/express'
-import { handler } from './handler'
+import { addRoutes } from '@oselvar/inverse-fetch/express'
 
-addRoute({ router: app, method: 'get', path: '/hello', handler })
+app = express();
+await addRoutes(app, './routes');
 ```
 
 ```typescript
@@ -34,7 +47,7 @@ export const handler = toAwsLambdaHandler({ handler })
 
 ## Why?
 
-You might ask yourself why we need another convention for defining HTTP routes. After all, every JavaScript web framework has its own way of defining routes.
+You might ask yourself why we need another convention for defining HTTP routes. After all, every JavaScript web framework has its *own way* of defining routes.
 
 ```typescript
 // Express
@@ -63,10 +76,6 @@ fastify.get('/hello', async (request, reply) => {
 All of these web frameworks have one thing in common: 
 *They all have their own proprietary way of defining routes.*
 
-That's fine if you are only using one web framework, but what if you want to use multiple web frameworks?
-
-Why on earth would you want to use multiple web frameworks? Well, there are a few use cases:
-
 ## Local development
 
 For instance, you might be using AWS Lambda during production. While it's possible to emulate AWS Lambda locally, you have to endure a very long delay between each change to your code. 
@@ -80,6 +89,20 @@ Another use case is integration testing your JavaScript client and your server.
 If your client uses the Fetch API, you can call your handler directly from the client. After all, the handler has exactly the same interface as `fetch`.
 
 This allows you to write integration tests that can run in milliseconds.
+
+## Mounting handlers in your web framework
+
+The `inverse-fetch` module provides utilities for mounting your handlers in your web framework.
+You can choose between file based routing or a more traditional approach where you mount handlers with code.
+
+### File based routing
+
+With file based routing, you must follow the following conventions:
+
+* One file per handler
+* The file name must be `GET.ts`, `POST.ts` etc.
+* The file **must** export a `handler` function
+* The file **may** export a `route` object for OpenAPI documentation and validation
 
 ## Helpers
 
@@ -105,3 +128,10 @@ export const handler: FetchHandler = async (input) => {
 
 ```typescript
 ```
+
+## Benchmarks
+
+The various web framework adapters for Inverse Fetch convert incoming requests to a Fetch API `Request` object,
+and then convert the `Response` object returned by the handler to the appropriate response format.
+
+This has a performance cost, but it's not as bad as you might think.

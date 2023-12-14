@@ -1,5 +1,4 @@
 import { type RouteConfig } from '@asteasolutions/zod-to-openapi';
-import { z } from 'zod';
 
 import { type FetchHandler } from '../../../../index.js';
 import {
@@ -9,7 +8,7 @@ import {
   Response422,
   Response500,
 } from '../../../../openapi/index.js';
-import { registry } from '../../../registry.js';
+import { z } from '../../../registry.js';
 
 // Define Zod schemas for the request parameters, query and body
 
@@ -63,9 +62,6 @@ export const route: RouteConfig = {
     500: Response500,
   },
 };
-
-// Add the route to the global registry - used to write the OpenAPI spec for the whole app
-registry.registerPath(route);
 
 export type ThingParams = z.infer<typeof ThingParamsSchema>;
 export type ThingBody = z.infer<typeof ThingBodySchema>;
