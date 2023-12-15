@@ -39,15 +39,18 @@ export function addRoute(params: AddRouteParams) {
   const expressPath = path.replace(/{([^}]+)}/g, ':$1');
 
   const lowerCaseMethod = method.toLowerCase() as Lowercase<HttpMethod>;
-  router[lowerCaseMethod](expressPath, (req, res, next) => {
-    const url = new URL(req.url, `${req.protocol}://${req.hostname}`);
+  router[lowerCaseMethod](expressPath, (expressRequest, expressResponse, nextFunction) => {
+    const url = new URL(
+      expressRequest.url,
+      `${expressRequest.protocol}://${expressRequest.hostname}`,
+    );
     if (port !== undefined) {
       url.port = String(port);
     }
-    if (typeof req.query === 'string') {
-      url.search = req.query;
-    } else if (typeof req.query === 'object') {
-      Object.entries(req.query).forEach(([key, value]) => {
+    if (typeof expressRequest.query === 'string') {
+      url.search = expressRequest.query;
+    } else if (typeof expressRequest.query === 'object') {
+      Object.entries(expressRequest.query).forEach(([key, value]) => {
         if (typeof value === 'string') {
           url.searchParams.append(key, value);
         }
@@ -55,11 +58,11 @@ export function addRoute(params: AddRouteParams) {
     }
 
     const requestInit: RequestInit = {
-      method: req.method,
-      headers: new Headers(req.headers as Record<string, string>),
+      method: expressRequest.method,
+      headers: new Headers(expressRequest.headers as Record<string, string>),
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      body: Readable.toWeb(req),
+      body: Readable.toWeb(expressRequest),
       // https://github.com/nodejs/node/issues/46221#issuecomment-1426707013
       duplex: 'half',
     };
@@ -68,16 +71,16 @@ export function addRoute(params: AddRouteParams) {
     const eh = errorHandler(handler, toErrorResponse);
     eh(request)
       .then((response) => {
-        res.status(response.status);
+        expressResponse.status(response.status);
         response.headers.forEach((value, key) => {
-          res.setHeader(key, value);
+          expressResponse.setHeader(key, value);
         });
         if (response.body) {
-          Readable.fromWeb(response.body as NodeReadableStream).pipe(res);
+          Readable.fromWeb(response.body as NodeReadableStream).pipe(expressResponse);
         } else {
-          res.end();
+          expressResponse.end();
         }
       })
-      .catch(next);
+      .catch(nextFunction);
   });
 }
