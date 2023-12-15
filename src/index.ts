@@ -44,6 +44,8 @@ export interface IFetchHelper {
   respondWith(response: Response): Promise<Response>;
 }
 
+export const paramRegExp = /{([^}]*)}/g;
+
 export class FetchHelper implements IFetchHelper {
   public readonly request: Request;
   public readonly url: URL;
@@ -66,10 +68,9 @@ export class FetchHelper implements IFetchHelper {
   }
 
   params<T extends Record<string, string>>(): T {
-    const paramRegex = /{([^}]*)}/g;
-    const paramNames = [...this.pathPattern.matchAll(paramRegex)].map((match) => match[1]);
-    const pathRegex = new RegExp(this.pathPattern.replace(paramRegex, '([^/]*)'), 'g');
-    const values = [...this.url.pathname.matchAll(pathRegex)].map((match) => match[1]);
+    const pathRegExp = toPathRegExp(this.pathPattern);
+    const values = [...this.url.pathname.matchAll(pathRegExp)].map((match) => match[1]);
+    const paramNames = [...this.pathPattern.matchAll(paramRegExp)].map((match) => match[1]);
     return Object.fromEntries(paramNames.map((name, index) => [name, values[index]])) as T;
   }
 
@@ -121,6 +122,7 @@ export const toJsonErrorResponse: ToErrorResponse = (error) => {
  */
 export function errorHandler(
   handler: FetchHandler,
+  // TODO: Make this required
   toErrorResponse: ToErrorResponse = toJsonErrorResponse,
 ): FetchHandler {
   return async (input, init) => {
@@ -180,4 +182,12 @@ function toHttpError(error: unknown): HttpError {
   } else {
     return new HttpError500('Unknown error');
   }
+}
+
+export function toPathRegExp(pathPattern: string): RegExp {
+  return new RegExp(pathPattern.replace(paramRegExp, '([^/]*)'), 'g');
+}
+
+export function toColonPathPattern(pathPattern: string): string {
+  return pathPattern.replace(paramRegExp, ':$1');
 }

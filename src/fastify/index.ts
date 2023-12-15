@@ -6,7 +6,7 @@ import type { FastifyInstance, RequestGenericInterface } from 'fastify';
 import type { Endpoint } from '../file-based-routing/index.js';
 import { importEndpoints } from '../file-based-routing/index.js';
 import type { HttpMethod, ToErrorResponse } from '../index.js';
-import { errorHandler, toJsonErrorResponse } from '../index.js';
+import { errorHandler, toColonPathPattern, toJsonErrorResponse } from '../index.js';
 
 /**
  * File based routing for Fastify. Adds FetchHandler routes to a Fastify instance.
@@ -35,12 +35,12 @@ export function addRoute(params: AddRouteParams) {
   const {
     fastify,
     method,
-    pathPattern: path,
+    pathPattern,
     handler,
     toErrorResponse = toJsonErrorResponse,
     port,
   } = params;
-  const fastifyPath = path.replace(/{([^}]+)}/g, ':$1');
+  const fastifyPath = toColonPathPattern(pathPattern);
 
   const lowerCaseMethod = method.toLowerCase() as Lowercase<HttpMethod>;
   if (lowerCaseMethod === 'trace') {

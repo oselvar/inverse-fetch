@@ -6,7 +6,7 @@ import type { IRouter } from 'express';
 import type { Endpoint } from '../file-based-routing/index.js';
 import { importEndpoints } from '../file-based-routing/index.js';
 import type { HttpMethod, ToErrorResponse } from '../index.js';
-import { errorHandler, toJsonErrorResponse } from '../index.js';
+import { errorHandler, toColonPathPattern, toJsonErrorResponse } from '../index.js';
 
 /**
  * File based routing for Express. Adds FetchHandler routes to an Express router.
@@ -17,6 +17,7 @@ import { errorHandler, toJsonErrorResponse } from '../index.js';
 export async function addRoutes(router: IRouter, routeDir: string) {
   const endpoints = await importEndpoints(routeDir);
   for (const endpoint of endpoints) {
+    // TODO: Add toErrorMessage - also in Fastify
     addRoute({ router, ...endpoint });
   }
 }
@@ -31,12 +32,12 @@ export function addRoute(params: AddRouteParams) {
   const {
     router,
     method,
-    pathPattern: path,
+    pathPattern,
     handler,
     toErrorResponse = toJsonErrorResponse,
     port,
   } = params;
-  const expressPath = path.replace(/{([^}]+)}/g, ':$1');
+  const expressPath = toColonPathPattern(pathPattern);
 
   const lowerCaseMethod = method.toLowerCase() as Lowercase<HttpMethod>;
   router[lowerCaseMethod](expressPath, (expressRequest, expressResponse, nextFunction) => {

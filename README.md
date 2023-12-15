@@ -76,6 +76,12 @@ fastify.get('/hello', async (request, reply) => {
 All of these web frameworks have one thing in common: 
 *They all have their own proprietary way of defining routes.*
 
+Architecture changes *do* happen. You might start out with one web framework, and for various reasons (scaling, company politics etc) you might want to switch to another one.
+
+If you have a lot of routes, this can be a lot of work. You have to rewrite all your routes to the new framework.
+
+With Inverse Fetch, you can define your routes using the Fetch API. This means that you can switch to another web framework without having to rewrite your routes.
+
 ## Local development
 
 For instance, you might be using AWS Lambda during production. While it's possible to emulate AWS Lambda locally, you have to endure a very long delay between each change to your code. 
