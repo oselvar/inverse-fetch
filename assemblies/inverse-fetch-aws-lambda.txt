@@ -1,0 +1,9 @@
+‾‾‾‾‾‾‾‾‾‾.infrastructure
+fetch
+‾‾__‾‾__‾‾.infrastructure
+aws lambda
+‾‾╲╱‾‾╲╱‾‾.infrastructure
+lambda-adapter
+__‾‾__‾‾__.infrastructure
+fetch handler
+__________.production

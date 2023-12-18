@@ -21,12 +21,23 @@ The obligatory "Hello World" example:
 ```typescript
 // ./routes/hello.ts
 // FetchHandler is an alias for `typeof fetch`
+import { FetchHandler } from '@oselvar/inverse-fetch'
+
 export const handler: FetchHandler = async (input) => {
   return new Response(`Hello World`)
 }
 ```
 
 Your `FetchHandler`s can be mounted in several different web frameworks using *file based routing*:
+
+```typescript
+// node:http
+import http from 'node:http'
+import { createRequestListener } from '@oselvar/inverse-fetch/node-http'
+
+const requestListener = await createRequestListener('./routes');
+const server = http.createServer(requestListener);
+```
 
 ```typescript
 // Express
@@ -38,11 +49,16 @@ await addRoutes(app, './routes');
 ```
 
 ```typescript
-// AWS Lambda
+// ./routes/hello.ts
+// AWS Lambda - export a lambdaHandler from the same file as the FetchHandler
 import { toAwsLambdaHandler } from '@oselvar/inverse-fetch/aws-lambda'
-import { handler as fetchHandler } from './handler'
+import { FetchHandler } from '@oselvar/inverse-fetch'
 
-export const handler = toAwsLambdaHandler({ handler })
+export const handler: FetchHandler = async (input) => {
+  return new Response(`Hello World`)
+}
+
+export const lambdaHandler = toAwsLambdaHandler({ handler })
 ```
 
 ## Why?

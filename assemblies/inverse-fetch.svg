@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 478.2842712474619" width="520" height="478.2842712474619">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 516 472.62741699796953" width="516" height="472.62741699796953">
   <defs>
     <style type="text/css"><![CDATA[
 text {
@@ -37,11 +37,11 @@ https://davidmathlogic.com/colorblind/#%23648FFF-%23785EF0-%23DC267F-%23FE6100-%
 
     ]]></style>
   </defs>
-  <g stroke-width="20" transform="translate(10, 14.142135623730951)" class="infrastructure">
+  <g stroke-width="16" transform="translate(8, 11.313708498984761)" class="infrastructure">
     <path d="M 0 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 50 0 l 0 50 l 0 150 l 0 50 l -50 0 l -50 0 l 0 -50 l -50 0 l -50 0 l 0 50 l -50 0 l -50 0 l 0 -50 l -50 0 l -50 0 l 0 50 l -50 0 l -50 0 z" />
     <text x="50%" y="128" alignment-baseline="middle" text-anchor="middle">fetch</text>
   </g>
-  <g stroke-width="20" transform="translate(10, 214.14213562373095)" class="production">
+  <g stroke-width="16" transform="translate(8, 211.31370849898477)" class="production">
     <path d="M 0 50 l 50 0 l 50 0 l 0 -50 l 50 0 l 50 0 l 0 50 l 50 0 l 50 0 l 0 -50 l 50 0 l 50 0 l 0 50 l 50 0 l 50 0 l 0 150 l 0 50 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 l -50 0 z" />
     <text x="50%" y="128" alignment-baseline="middle" text-anchor="middle">inverse-fetch</text>
   </g>
