@@ -83,6 +83,10 @@ export class OpenAPIHelper implements IFetchHelper {
     this.url = this.helper.url;
   }
 
+  contentType(): string | null {
+    return this.helper.contentType();
+  }
+
   params<T extends Record<string, string>>(): T {
     const params = this.helper.params();
     const schema = this.route.request?.params;
@@ -100,7 +104,7 @@ export class OpenAPIHelper implements IFetchHelper {
     if (!body) {
       return body as T;
     }
-    const contentType = this.helper.request.headers.get('content-type');
+    const contentType = this.helper.contentType();
     if (!contentType) {
       // Should never happen - the same check is in this.helper.bodyObject()
       throw new HttpError415(`No Content-Type header`);

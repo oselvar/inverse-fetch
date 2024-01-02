@@ -1,5 +1,4 @@
 export type FetchHandler = typeof fetch;
-
 export const HttpMethods = [
   'GET',
   'POST',
@@ -22,6 +21,11 @@ export type Json = string | number | boolean | null | Json[] | { [key: string]: 
 export interface IFetchHelper {
   readonly request: Request;
   readonly url: URL;
+
+  /**
+   * Returns the Content-Type header from the request (removing everything from `;`).
+   */
+  contentType(): string | null;
 
   /**
    * Returns the path parameters from the request URL.
@@ -67,6 +71,15 @@ export class FetchHelper implements IFetchHelper {
     this.url = new URL(this.request.url);
   }
 
+  contentType(): string | null {
+    const contentTypeHeader = this.request.headers.get('content-type');
+    if (!contentTypeHeader) {
+      return null;
+    }
+    const index = contentTypeHeader.indexOf(';');
+    return index !== -1 ? contentTypeHeader.slice(0, index).trim() : contentTypeHeader.trim();
+  }
+
   params<T extends Record<string, string>>(): T {
     const pathRegExp = toPathRegExp(this.pathPattern);
     const values = [...this.url.pathname.matchAll(pathRegExp)].map((match) => match[1]);
@@ -81,16 +94,21 @@ export class FetchHelper implements IFetchHelper {
   /**
    * Returns the request body as a JSON object.
    *
-   * @throws HttpError415 if the request body is not `application/json` or `application/x-www-form-urlencoded`
+   * @throws HttpError415 if the request body is not `application/json`,
+   * `application/x-www-form-urlencoded` or `multipart/form-data`
    */
   async bodyObject<T extends Json>(): Promise<T> {
-    const contentType = this.request.headers.get('content-type');
+    const contentType = this.contentType();
     if (!contentType) {
       throw new HttpError415(`No Content-Type header`);
     }
+
     if (contentType === 'application/json') {
       return this.request.json();
     } else if (contentType === 'application/x-www-form-urlencoded') {
+      const body = await this.request.formData();
+      return Object.fromEntries(body.entries()) as T;
+    } else if (contentType === 'multipart/form-data') {
       const body = await this.request.formData();
       return Object.fromEntries(body.entries()) as T;
     }

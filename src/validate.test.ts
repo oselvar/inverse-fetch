@@ -26,14 +26,26 @@ describe('FetchRoute', () => {
     route.path = undefined;
   });
 
-  it('validates request and response', async () => {
-    const response = await handler(thingRequest(goodParams, goodThing));
+  it('validates JSON request and response', async () => {
+    const response = await handler(thingRequestJson(goodParams, goodThing));
+    const responseBody = await response.json();
+    expect(responseBody).toEqual(goodThing);
+  });
+
+  it('validates Form URL encoded request and response', async () => {
+    const response = await handler(thingRequestFormUrlencoded(goodParams, goodThing));
+    const responseBody = await response.json();
+    expect(responseBody).toEqual(goodThing);
+  });
+
+  it('validates FormData request and response', async () => {
+    const response = await handler(thingRequestFormData(goodParams, goodThing));
     const responseBody = await response.json();
     expect(responseBody).toEqual(goodThing);
   });
 
   it('throws 404 error for malformed path params', async () => {
-    expect(handler(thingRequest(badParams, goodThing))).rejects.toThrowError(HttpError404);
+    expect(handler(thingRequestJson(badParams, goodThing))).rejects.toThrowError(HttpError404);
   });
 
   it('throws 415 error for unsupported media type', async () => {
@@ -51,11 +63,11 @@ describe('FetchRoute', () => {
   });
 
   it('throws 422 error for malformed request body', async () => {
-    expect(handler(thingRequest(goodParams, badThing))).rejects.toThrowError(HttpError422);
+    expect(handler(thingRequestJson(goodParams, badThing))).rejects.toThrowError(HttpError422);
   });
 
   it('throws 500 error for malformed response body', async () => {
-    expect(handler(thingRequest(respondWithBadTypeParams, goodThing))).rejects.toThrowError(
+    expect(handler(thingRequestJson(respondWithBadTypeParams, goodThing))).rejects.toThrowError(
       HttpError500,
     );
   });
@@ -78,12 +90,37 @@ describe('FetchRoute', () => {
   });
 });
 
-export function thingRequest({ thingId }: ThingParams, thing: ThingBody) {
+export function thingRequestJson({ thingId }: ThingParams, thing: ThingBody) {
   return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
     method: 'post',
     headers: {
       'content-type': 'application/json',
     },
     body: JSON.stringify(thing),
+  });
+}
+
+export function thingRequestFormUrlencoded({ thingId }: ThingParams, thing: ThingBody) {
+  const body = new URLSearchParams();
+  for (const [key, value] of Object.entries(thing)) {
+    body.append(key, value);
+  }
+  return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
+    method: 'post',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  });
+}
+
+export function thingRequestFormData({ thingId }: ThingParams, thing: ThingBody) {
+  const body = new FormData();
+  for (const [key, value] of Object.entries(thing)) {
+    body.append(key, value);
+  }
+  return new Request(`http://host.com/things/${encodeURIComponent(thingId)}`, {
+    method: 'post',
+    body,
   });
 }

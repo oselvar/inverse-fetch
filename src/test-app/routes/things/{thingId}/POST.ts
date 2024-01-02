@@ -41,6 +41,12 @@ export const route: Route = {
         'application/json': {
           schema: ThingBodySchema,
         },
+        'application/x-www-form-urlencoded': {
+          schema: ThingBodySchema,
+        },
+        'multipart/form-data': {
+          schema: ThingBodySchema,
+        },
       },
     },
   },

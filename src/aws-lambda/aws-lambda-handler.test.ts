@@ -19,7 +19,7 @@ import {
   respondWithBadTypeParams,
   route,
 } from '../test-app/routes/things/{thingId}/POST.js';
-import { thingRequest } from '../validate.test.js';
+import { thingRequestJson } from '../validate.test.js';
 import { toAwsLambdaHandler } from './index.js';
 
 const context = {} as Context;
@@ -40,7 +40,7 @@ describe('aws-lambda-handler', () => {
   });
 
   it('validates request and response', async () => {
-    const event = await toEvent(thingRequest(goodParams, goodThing));
+    const event = await toEvent(thingRequestJson(goodParams, goodThing));
 
     const awsLambdaHandler = toAwsLambdaHandler({ handler });
     const result = (await awsLambdaHandler(
@@ -52,7 +52,7 @@ describe('aws-lambda-handler', () => {
   });
 
   it('responds with 404 for malformed path params', async () => {
-    const event = await toEvent(thingRequest(badParams, goodThing));
+    const event = await toEvent(thingRequestJson(badParams, goodThing));
 
     const awsLambdaHandler = toAwsLambdaHandler({ handler });
     const result = await awsLambdaHandler(event, context, callback);
@@ -62,7 +62,7 @@ describe('aws-lambda-handler', () => {
   });
 
   it('responds with 422 for malformed request body', async () => {
-    const event = await toEvent(thingRequest(goodParams, badThing));
+    const event = await toEvent(thingRequestJson(goodParams, badThing));
 
     const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
@@ -72,7 +72,7 @@ describe('aws-lambda-handler', () => {
   });
 
   it('responds with 500 for malformed response body', async () => {
-    const event = await toEvent(thingRequest(respondWithBadTypeParams, goodThing));
+    const event = await toEvent(thingRequestJson(respondWithBadTypeParams, goodThing));
 
     const proxyHandler = toAwsLambdaHandler({ handler });
     const result = await proxyHandler(event, context, callback);
